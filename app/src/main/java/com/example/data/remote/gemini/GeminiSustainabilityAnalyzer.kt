@@ -4,7 +4,6 @@ import android.graphics.Bitmap
 import android.util.Base64
 import android.util.Log
 import com.example.BuildConfig
-import com.example.ai.tflite.TfLiteDetectedObject
 import com.example.ar.ArHitMarker
 import com.example.data.model.EcoActionType
 import com.example.data.model.WasteCategory
@@ -93,11 +92,6 @@ data class AiSustainabilityProfileResult(
     val threeRGuidance: ThreeRGuidance? = null,
     val stepByStepGuide: List<String> = emptyList(),
     val upcyclingIdeas: List<String> = emptyList(),
-    val waysToReuse: List<String> = emptyList(),
-    val waysToDispose: List<String> = emptyList(),
-    val tfLiteObjects: List<TfLiteDetectedObject> = emptyList(),
-    val detectedByTensorFlow: Boolean = false,
-    val tensorFlowConfidence: Float = 0f,
     val ecoFriendlyAlternative: String = "",
     val funFact: String = "",
     val arVisualBadge: String = "♻️ 3R Verified",
@@ -118,19 +112,15 @@ data class AiSustainabilityProfileResult(
             decompositionTime = decompositionTime,
             carbonFootprint = carbonFootprint,
             recyclingBinType = recyclingBinType,
-            stepByStepGuide = if (waysToDispose.isNotEmpty()) waysToDispose else stepByStepGuide,
-            upcyclingIdeas = if (waysToReuse.isNotEmpty()) waysToReuse else upcyclingIdeas,
+            stepByStepGuide = stepByStepGuide,
+            upcyclingIdeas = upcyclingIdeas,
             ecoFriendlyAlternative = ecoFriendlyAlternative,
             funFact = funFact,
             arVisualBadge = arVisualBadge,
             sustainabilityProfileDescription = sustainabilityDescription,
             recyclabilityScore = recyclabilityScore,
             isAiAnalyzed = isAiGenerated,
-            aiModelUsed = modelName,
-            waysToReuse = if (waysToReuse.isNotEmpty()) waysToReuse else upcyclingIdeas,
-            waysToDispose = if (waysToDispose.isNotEmpty()) waysToDispose else stepByStepGuide,
-            detectedByTensorFlow = detectedByTensorFlow,
-            tensorFlowConfidence = tensorFlowConfidence
+            aiModelUsed = modelName
         )
     }
 }
@@ -138,14 +128,12 @@ data class AiSustainabilityProfileResult(
 object GeminiSustainabilityAnalyzer {
 
     /**
-     * Analyzes a camera frame or uploaded image using Gemini Multimodal Vision API,
-     * utilizing on-device TensorFlow detection results to refine reuse & disposal suggestions.
+     * Analyzes a camera frame or uploaded image using Gemini Multimodal Vision API.
      */
     suspend fun analyzeFrame(
         bitmap: Bitmap?,
         detectedMarker: ArHitMarker? = null,
-        barcodeInput: String? = null,
-        tfDetectedObjects: List<TfLiteDetectedObject> = emptyList()
+        barcodeInput: String? = null
     ): AiSustainabilityProfileResult = withContext(Dispatchers.IO) {
         val apiKey = try {
             BuildConfig.GEMINI_API_KEY
@@ -158,9 +146,9 @@ object GeminiSustainabilityAnalyzer {
 
         if (apiKey.isNotBlank() && apiKey != "MY_GEMINI_API_KEY" && base64Image != null) {
             try {
-                Log.d(TAG, "Calling Gemini 3.5 Flash with ${tfDetectedObjects.size} TensorFlow objects (${base64Image.length} chars)")
+                Log.d(TAG, "Calling Gemini 3.5 Flash multimodal vision with captured image (${base64Image.length} chars)")
                 
-                val prompt = buildAnalysisPrompt(detectedMarker, barcodeInput, tfDetectedObjects)
+                val prompt = buildAnalysisPrompt(detectedMarker, barcodeInput)
                 val request = GeminiGenerateRequest(
                     contents = listOf(
                         GeminiContent(
@@ -188,7 +176,7 @@ object GeminiSustainabilityAnalyzer {
                 
                 if (!responseText.isNullOrBlank()) {
                     Log.d(TAG, "Gemini Response received: $responseText")
-                    val parsedResult = parseGeminiResponse(responseText, bitmap, tfDetectedObjects)
+                    val parsedResult = parseGeminiResponse(responseText, bitmap)
                     if (parsedResult != null) {
                         return@withContext parsedResult
                     }
@@ -198,30 +186,14 @@ object GeminiSustainabilityAnalyzer {
             }
         }
 
-        // High-fidelity fallback based on TensorFlow edge detection, optical markers & repository items
-        return@withContext createFallbackSustainabilityProfile(bitmap, detectedMarker, barcodeInput, tfDetectedObjects)
+        // High-fidelity fallback based on optical markers & repository items
+        return@withContext createFallbackSustainabilityProfile(bitmap, detectedMarker, barcodeInput)
     }
 
     private fun buildAnalysisPrompt(
         marker: ArHitMarker?,
-        barcodeInput: String?,
-        tfObjects: List<TfLiteDetectedObject> = emptyList()
+        barcodeInput: String?
     ): String {
-        val tfContext = if (tfObjects.isNotEmpty()) {
-            val top = tfObjects.first()
-            """
-            STAGE 1 — TENSORFLOW ON-DEVICE OBJECT DETECTION RESULTS:
-            The on-device TensorFlow Lite model detected:
-            - Object Name / Class: "${top.label}"
-            - Material Identification: "${top.material}"
-            - Model Confidence: ${(top.confidence * 100).toInt()}%
-            - Recommended Action: "${top.recommendedAction}"
-            - Bounding Box: [L:${top.boundingBox.left}, T:${top.boundingBox.top}, R:${top.boundingBox.right}, B:${top.boundingBox.bottom}]
-            """.trimIndent()
-        } else {
-            ""
-        }
-
         val markerContext = if (marker != null) {
             "Optical telemetry hint: label='${marker.label}', resinCode='${marker.resinCode}', density=${marker.densityGcm3}g/cm³."
         } else {
@@ -235,23 +207,17 @@ object GeminiSustainabilityAnalyzer {
         }
 
         return """
-            You are an expert AI Sustainability Specialist powered by Google Gemini Vision.
-            $tfContext
+            You are an expert AI Sustainability & Waste Sorting Specialist powered by Google Gemini Vision.
             $markerContext
             $barcodeContext
             
-            SEQUENTIAL PIPELINE:
-            1. Stage 1 was performed by TensorFlow on-device detection (see detected object above).
-            2. In Stage 2, your task as Gemini is to suggest tailored, actionable ways to REUSE or DISPOSE of the identified item.
-            
-            Explicit Requirements:
-            - "waysToReuse": Suggest at least 3-4 creative, practical, safe ways to reuse, upcycle, repurpose, or repair this item.
-            - "waysToDispose": Suggest at least 3-4 exact, step-by-step proper disposal instructions (exact bin type/color, rinsing, flattening, or special e-waste/hazardous drop-off).
-            
-            Task details:
-            - Examine the image and the TensorFlow detected object.
-            - Identify specific item name, material, category, recyclability score (0-100), decomposition time, and carbon footprint.
-            - Provide structured 3R (Reduce, Reuse, Repair, Recycle, Special Disposal) guidance.
+            Task:
+            1. Examine the provided image thoroughly and detect ALL physical objects or waste items visible in the scene.
+            2. For EACH detected object:
+               - Determine its specific name (e.g., "500ml PET Beverage Bottle", "Torn Denim Jeans", "Broken Ceramic Mug", "Aluminum Soda Can", "Apple Core", "AA Alkaline Battery").
+               - Identify its material composition (e.g., "PET #1 Plastic", "100% Cotton Textile", "Glazed Ceramic", "Aluminum Alloy", "Organic Fruit Waste", "Zinc-Carbon").
+               - Classify its category: Plastics, Paper & Cardboard, Glass, Metals & Cans, Organic Waste, E-Waste & Batteries, Textiles & Clothing, Cartons & Composites, or Other.
+               - Determine confidence (0.0 to 1.0) and confidence percentage (0-100%).
                - If an object cannot be identified confidently (e.g. due to blurriness, darkness, obstruction, or ambiguity), set "isConfident": false, keep confidence low, and provide a clear, honest "unconfidentReason" explaining what is uncertain instead of guessing.
                - Determine the MOST APPROPRIATE ACTION among:
                  * Reuse (repurpose, clean, or upcycle)
@@ -324,17 +290,6 @@ object GeminiSustainabilityAnalyzer {
                 "isHazardousOrSpecial": false,
                 "safetyWarning": ""
               },
-              "waysToReuse": [
-                "1. Creative upcycling or DIY repurposing project",
-                "2. Practical functional second-life storage or household use",
-                "3. Repair, cleaning, or maintenance suggestion"
-              ],
-              "waysToDispose": [
-                "1. Exact bin type and stream (e.g. Blue Recycling Bin)",
-                "2. Empty and clean food or liquid residue",
-                "3. Crush flat to conserve bin volume",
-                "4. Component separation or hazardous drop-off note"
-              ],
               "stepByStepGuide": ["1. Empty and rinse", "2. Crush flat", "3. Place in blue bin"],
               "upcyclingIdeas": ["Cut top to create a desktop pen holder or indoor plant pot"],
               "ecoFriendlyAlternative": "Refillable stainless steel bottle",
@@ -346,8 +301,7 @@ object GeminiSustainabilityAnalyzer {
 
     private fun parseGeminiResponse(
         responseText: String,
-        originalBitmap: Bitmap?,
-        tfObjects: List<TfLiteDetectedObject> = emptyList()
+        originalBitmap: Bitmap?
     ): AiSustainabilityProfileResult? {
         try {
             var cleanJson = responseText.trim()
@@ -568,38 +522,6 @@ object GeminiSustainabilityAnalyzer {
             val matchedCategory = WasteCategory.fromString(categoryStr)
             val matchedAction = EcoActionType.fromString(actionStr)
 
-            val waysToReuse = mutableListOf<String>()
-            val reuseArray = json.optJSONArray("waysToReuse")
-            if (reuseArray != null) {
-                for (i in 0 until reuseArray.length()) {
-                    val s = reuseArray.optString(i, "").trim()
-                    if (s.isNotBlank()) waysToReuse.add(s)
-                }
-            }
-            if (waysToReuse.isEmpty()) {
-                waysToReuse.addAll(upcyclingIdeas)
-                if (tfObjects.isNotEmpty() && tfObjects.first().waysToReuse.isNotEmpty()) {
-                    waysToReuse.addAll(tfObjects.first().waysToReuse)
-                }
-            }
-
-            val waysToDispose = mutableListOf<String>()
-            val disposeArray = json.optJSONArray("waysToDispose")
-            if (disposeArray != null) {
-                for (i in 0 until disposeArray.length()) {
-                    val s = disposeArray.optString(i, "").trim()
-                    if (s.isNotBlank()) waysToDispose.add(s)
-                }
-            }
-            if (waysToDispose.isEmpty()) {
-                waysToDispose.addAll(stepByStepGuide)
-                if (tfObjects.isNotEmpty() && tfObjects.first().waysToDispose.isNotEmpty()) {
-                    waysToDispose.addAll(tfObjects.first().waysToDispose)
-                }
-            }
-
-            val topTf = tfObjects.firstOrNull()
-
             return AiSustainabilityProfileResult(
                 itemName = itemName,
                 category = matchedCategory,
@@ -618,11 +540,6 @@ object GeminiSustainabilityAnalyzer {
                 threeRGuidance = threeRGuidance,
                 stepByStepGuide = stepByStepGuide,
                 upcyclingIdeas = upcyclingIdeas,
-                waysToReuse = waysToReuse.distinct(),
-                waysToDispose = waysToDispose.distinct(),
-                tfLiteObjects = tfObjects,
-                detectedByTensorFlow = tfObjects.isNotEmpty(),
-                tensorFlowConfidence = topTf?.confidence ?: confidenceLevel,
                 ecoFriendlyAlternative = ecoFriendlyAlternative,
                 funFact = funFact,
                 arVisualBadge = arVisualBadge,
@@ -639,17 +556,10 @@ object GeminiSustainabilityAnalyzer {
     fun createFallbackSustainabilityProfile(
         bitmap: Bitmap?,
         detectedMarker: ArHitMarker?,
-        barcodeInput: String? = null,
-        tfDetectedObjects: List<TfLiteDetectedObject> = emptyList()
+        barcodeInput: String? = null
     ): AiSustainabilityProfileResult {
         val sampleItems = WasteRepositoryData.sampleItems
-        val topTf = tfDetectedObjects.firstOrNull()
-
-        val matchedItem = if (topTf != null) {
-            sampleItems.firstOrNull { it.name.contains(topTf.label, ignoreCase = true) || topTf.label.contains(it.name, ignoreCase = true) }
-                ?: sampleItems.firstOrNull { it.materialType.contains(topTf.material, ignoreCase = true) }
-                ?: sampleItems.first()
-        } else if (detectedMarker != null) {
+        val matchedItem = if (detectedMarker != null) {
             sampleItems.firstOrNull { it.name.contains(detectedMarker.label, ignoreCase = true) }
                 ?: sampleItems.firstOrNull { it.materialType.contains(detectedMarker.resinCode, ignoreCase = true) }
                 ?: sampleItems.first()
@@ -658,13 +568,6 @@ object GeminiSustainabilityAnalyzer {
         } else {
             sampleItems.first()
         }
-
-        val isHazardous = matchedItem.category == WasteCategory.ELECTRONIC
-        val itemName = topTf?.label ?: matchedItem.name
-        val materialType = topTf?.material ?: matchedItem.materialType
-        val actionType = if (isHazardous) EcoActionType.SPECIAL_DISPOSAL else if (topTf != null) EcoActionType.fromString(topTf.recommendedAction) else matchedItem.primaryAction
-        val waysToReuse = if (topTf != null && topTf.waysToReuse.isNotEmpty()) topTf.waysToReuse else matchedItem.upcyclingIdeas
-        val waysToDispose = if (topTf != null && topTf.waysToDispose.isNotEmpty()) topTf.waysToDispose else matchedItem.stepByStepGuide
 
         val components = when (matchedItem.category) {
             WasteCategory.PLASTIC -> listOf(
@@ -723,6 +626,9 @@ object GeminiSustainabilityAnalyzer {
             )
         }
 
+        val isHazardous = matchedItem.category == WasteCategory.ELECTRONIC
+        val actionType = if (isHazardous) EcoActionType.SPECIAL_DISPOSAL else matchedItem.primaryAction
+
         val detectedObj = DetectedObjectAnalysis(
             name = matchedItem.name,
             material = matchedItem.materialType,
@@ -767,31 +673,26 @@ object GeminiSustainabilityAnalyzer {
 
         return AiSustainabilityProfileResult(
             id = matchedItem.id,
-            itemName = itemName,
+            itemName = matchedItem.name,
             category = matchedItem.category,
             primaryAction = actionType,
-            materialType = materialType,
+            materialType = matchedItem.materialType,
             decompositionTime = matchedItem.decompositionTime,
             carbonFootprint = matchedItem.carbonFootprint,
             recyclingBinType = matchedItem.recyclingBinType,
             recyclabilityScore = if (actionType == EcoActionType.RECYCLE) 94 else 88,
-            confidenceLevel = topTf?.confidence ?: 0.96f,
+            confidenceLevel = 0.96f,
             isConfident = true,
             lowConfidenceReason = null,
-            sustainabilityDescription = "Sustainability Profile for $itemName: Composed of $materialType. Detected by on-device TensorFlow and analyzed with Gemini circular 3R models.",
+            sustainabilityDescription = "Sustainability Profile for ${matchedItem.name}: Composed of ${matchedItem.materialType}. Takes approximately ${matchedItem.decompositionTime} to decompose if landfilled. Diverting through circular recovery saves over 75% energy compared to virgin production.",
             detectedObjects = listOf(detectedObj),
             detectedComponents = components,
             threeRGuidance = threeR,
-            stepByStepGuide = waysToDispose,
-            upcyclingIdeas = waysToReuse,
-            waysToReuse = waysToReuse,
-            waysToDispose = waysToDispose,
-            tfLiteObjects = tfDetectedObjects,
-            detectedByTensorFlow = tfDetectedObjects.isNotEmpty(),
-            tensorFlowConfidence = topTf?.confidence ?: 0f,
+            stepByStepGuide = matchedItem.stepByStepGuide,
+            upcyclingIdeas = matchedItem.upcyclingIdeas,
             ecoFriendlyAlternative = matchedItem.ecoFriendlyAlternative,
             funFact = matchedItem.funFact,
-            arVisualBadge = if (topTf != null) "⚡ TF: ${topTf.label}" else matchedItem.arVisualBadge,
+            arVisualBadge = matchedItem.arVisualBadge,
             isAiGenerated = true,
             modelName = "Gemini 3.5 Flash",
             capturedBitmap = bitmap

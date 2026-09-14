@@ -262,7 +262,7 @@ fun ArCameraPreviewSurface(
                 factory = { ctx ->
                     val previewView = PreviewView(ctx).apply {
                         scaleType = PreviewView.ScaleType.FILL_CENTER
-                        implementationMode = PreviewView.ImplementationMode.COMPATIBLE
+                        implementationMode = PreviewView.ImplementationMode.PERFORMANCE
                     }
                     currentPreviewView = previewView
                     val cameraProviderFuture = ProcessCameraProvider.getInstance(ctx)

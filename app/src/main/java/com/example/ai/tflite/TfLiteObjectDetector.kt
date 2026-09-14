@@ -22,8 +22,6 @@ data class TfLiteDetectedObject(
     val boundingBox: RectF,
     val material: String,
     val recommendedAction: String, // RECYCLE, REUSE, REDUCE, COMPOST, DISPOSE
-    val waysToReuse: List<String> = emptyList(),
-    val waysToDispose: List<String> = emptyList(),
     val suggestions: List<String> = emptyList()
 )
 
@@ -35,193 +33,16 @@ class TfLiteObjectDetector(private val context: Context) {
 
     // Common sustainability waste/product label map for TensorFlow detection & classification
     private val knownWasteCategories = mapOf(
-        "bottle" to TfCategoryProfile(
-            displayName = "Plastic / Glass Bottle",
-            material = "Plastics (PET #1)",
-            baseConfidence = 0.94f,
-            action = "RECYCLE",
-            tip = "Rinse, remove cap if non-recyclable, and sort into recycling container.",
-            waysToReuse = listOf(
-                "Cut the top off to create a self-watering indoor herb planter.",
-                "Puncture tiny holes in the cap to make a gentle garden seedling drip-waterer.",
-                "Turn into a hanging bird feeder or twine dispenser for household use.",
-                "Cut bottom half to make an organization cup for desk pens or paintbrushes."
-            ),
-            waysToDispose = listOf(
-                "Empty all liquid contents completely and give a quick rinse.",
-                "Crush bottle flat with your hand or foot to reduce bin volume by up to 75%.",
-                "Keep screw cap fastened (modern MRF facilities process PET #1 caps together).",
-                "Place into the Blue Curbside Recycling Bin (Dry Recyclables)."
-            )
-        ),
-        "can" to TfCategoryProfile(
-            displayName = "Aluminum / Tin Can",
-            material = "Metals (ALU #41)",
-            baseConfidence = 0.96f,
-            action = "RECYCLE",
-            tip = "Empty liquid, crush flat to save space, and place into metal recyclables.",
-            waysToReuse = listOf(
-                "Wash thoroughly and paint as a minimalist desktop pencil & stationery holder.",
-                "Poke decorative holes with a hammer and nail to craft a tin-can candle lantern.",
-                "Drill drainage holes at the base to turn into outdoor succulent starter pots.",
-                "Use in the workshop to organize nails, screws, washers, and small hardware."
-            ),
-            waysToDispose = listOf(
-                "Rinse out residual beverage or food remnants to prevent insect attraction.",
-                "Crush flat to save valuable bin volume.",
-                "Leave the pull-tab attached to ensure it is collected by magnetic eddy sorters.",
-                "Deposit into Blue / Metal Curbside Recycling (Aluminum is 100% infinitely recyclable)."
-            )
-        ),
-        "cup" to TfCategoryProfile(
-            displayName = "Beverage Cup / Tumbler",
-            material = "Paper / Plastic Composite",
-            baseConfidence = 0.91f,
-            action = "REDUCE",
-            tip = "Carry a reusable silicone or stainless travel tumbler.",
-            waysToReuse = listOf(
-                "Use clean paper cups as biodegradable seed starter pots that go directly into soil.",
-                "Use for mixing small batches of craft paint, epoxy, or potting soil.",
-                "Punch a string hole to make fun educational sound intercoms with kids."
-            ),
-            waysToDispose = listOf(
-                "Separate the plastic lid and cardboard sleeve (sleeve goes into paper recycling).",
-                "Most polyethylene-lined coffee cups are non-recyclable in standard curbside bins.",
-                "Dispose of lined cup in general waste unless certified industrial compostable.",
-                "Switch to a vacuum-insulated stainless tumbler to prevent future disposable waste."
-            )
-        ),
-        "cardboard" to TfCategoryProfile(
-            displayName = "Cardboard Packaging",
-            material = "Paper & Fibers (PAP 20)",
-            baseConfidence = 0.95f,
-            action = "RECYCLE",
-            tip = "Flatten boxes to conserve bin volume and keep clean from oils.",
-            waysToReuse = listOf(
-                "Cut strips to build customized drawer dividers for socks, cosmetics, or tools.",
-                "Lay flat in garden beds as sheet mulch to naturally suppress weeds and retain moisture.",
-                "Save clean boxes for mailing packages, household moves, or children's craft projects.",
-                "Tear corrugated pieces for scratching pads for cats or compost brown material."
-            ),
-            waysToDispose = listOf(
-                "Remove plastic tape, shipping pouches, styrofoam, and bubble wrap.",
-                "Flatten all cardboard boxes completely so they lie flat in the recycling truck.",
-                "Ensure cardboard is clean and dry — do not recycle greasy or food-stained sections.",
-                "Sort into the Yellow / Paper Recycling Bin."
-            )
-        ),
-        "paper" to TfCategoryProfile(
-            displayName = "Paper / Document",
-            material = "Cellulose Paper",
-            baseConfidence = 0.93f,
-            action = "RECYCLE",
-            tip = "Recycle clean paper or reuse blank sides for notes and scrap paper.",
-            waysToReuse = listOf(
-                "Flip over and use blank reverse sides for daily to-do lists, notes, and rough sketches.",
-                "Shred unneeded non-sensitive documents for shock-absorbing gift packing filler.",
-                "Use for papier-mâché sculptures, origami, or natural fireplace kindling."
-            ),
-            waysToDispose = listOf(
-                "Keep clean, flat, and dry — avoid mixing with liquid or food residues.",
-                "Remove heavy metal clips, plastic sleeves, or glossy plastic-coated covers.",
-                "Place in the Yellow / Blue Paper Recycling Stream.",
-                "Non-glossy shredded paper can also be added to home compost piles as carbon browns."
-            )
-        ),
-        "container" to TfCategoryProfile(
-            displayName = "Food Container / Tupperware",
-            material = "Polypropylene (PP #5)",
-            baseConfidence = 0.92f,
-            action = "REUSE",
-            tip = "Wash and reuse for meal prep, food storage, or hardware organizing.",
-            waysToReuse = listOf(
-                "Wash and repurpose for batch cooking, freezer meal prep, and office lunches.",
-                "Organize craft beads, buttons, sewing pins, or kids' crayons.",
-                "Use as an under-pot saucer to catch drainage water from indoor houseplants.",
-                "Repurpose in garage for sorting screws, nuts, bolts, and drill bits."
-            ),
-            waysToDispose = listOf(
-                "Scrape and rinse clean of all oils, gravies, and food residues.",
-                "Verify the resin code stamp on bottom (PP #5 or HDPE #2).",
-                "Ensure matching plastic lid is clean and recycled together.",
-                "Sort into the Plastics Recyclables stream."
-            )
-        ),
-        "bag" to TfCategoryProfile(
-            displayName = "Shopping Bag",
-            material = "Low-Density Polyethylene (LDPE #4)",
-            baseConfidence = 0.89f,
-            action = "REUSE",
-            tip = "Keep folded in backpack for grocery shopping to eliminate single-use bags.",
-            waysToReuse = listOf(
-                "Fold neatly and keep in purse or glove compartment for unexpected shopping trips.",
-                "Use as small waste bin liners for bathroom, vanity, or study wastebaskets.",
-                "Reuse for protecting shoes while packing luggage or wrapping wet umbrellas.",
-                "Use for sanitary pet waste disposal during dog walks."
-            ),
-            waysToDispose = listOf(
-                "DO NOT toss loose plastic bags into curbside recycling bins (they jam sorting gears).",
-                "Bundle clean plastic bags inside one bag and take to supermarket plastic film drop-off points.",
-                "Ensure all receipts, crumbs, and liquids are removed before drop-off.",
-                "Transition to reusable organic cotton canvas tote bags for shopping."
-            )
-        ),
-        "electronics" to TfCategoryProfile(
-            displayName = "Electronic Device / E-Waste",
-            material = "Composite Electronics",
-            baseConfidence = 0.97f,
-            action = "REPAIR",
-            tip = "Repair device or drop off at certified municipal E-Waste recycling center.",
-            waysToReuse = listOf(
-                "Inspect device: cleaning contacts, updating firmware, or swapping a battery can restore it.",
-                "Repurpose an older smartphone as a dedicated security camera, clock, or dashcam.",
-                "Donate functioning electronics to local community centers, schools, or charities."
-            ),
-            waysToDispose = listOf(
-                "NEVER dispose of in household garbage (lithium batteries pose severe landfill fire hazards).",
-                "Perform a factory reset and remove memory/SIM cards to protect personal data.",
-                "Take to a certified municipal E-Waste depot or electronics retailer trade-in program.",
-                "Tape battery terminals with electrical tape if battery is removable."
-            )
-        ),
-        "glass" to TfCategoryProfile(
-            displayName = "Glass Container / Jar",
-            material = "Soda-Lime Glass (GL #70)",
-            baseConfidence = 0.95f,
-            action = "REUSE",
-            tip = "Sterilize in boiling water for pantry bulk spice and preserve storage.",
-            waysToReuse = listOf(
-                "Sterilize in hot water and store dry pantry staples (rice, lentils, spices, chia seeds).",
-                "Use as an aesthetic drinking glass, smoothie tumbler, or overnight oats jar.",
-                "Create a charming rustic candle holder, terrarium, or fresh wildflower vase.",
-                "Use as a coin savings jar or desktop stationery organizer."
-            ),
-            waysToDispose = listOf(
-                "Rinse out all food or liquid residues thoroughly.",
-                "Remove metal or plastic lid (recycle metal lid separately in metal bin).",
-                "Place glass container into dedicated Glass Bottle Bank or curbside glass crate.",
-                "Do NOT mix broken window panes, ceramics, lightbulbs, or Pyrex into glass bottle recycling."
-            )
-        ),
-        "organic" to TfCategoryProfile(
-            displayName = "Food Waste / Peels",
-            material = "Organic Biomass",
-            baseConfidence = 0.96f,
-            action = "COMPOST",
-            tip = "Add to garden soil or home countertop composting unit for rich compost.",
-            waysToReuse = listOf(
-                "Simmer clean vegetable peels, celery tops, and carrot ends into rich culinary vegetable broth.",
-                "Infuse citrus peels in distilled white vinegar for 2 weeks to make an eco-friendly cleaning spray.",
-                "Use dried coffee grounds as a nitrogen booster for garden soil or natural fridge deodorizer.",
-                "Regrow spring onions and celery by placing root bases in shallow water."
-            ),
-            waysToDispose = listOf(
-                "Remove any plastic stickers, twist ties, or rubber bands from produce skins.",
-                "Place into home compost bin, vermicompost worm farm, or Bokashi fermenter.",
-                "If municipal composting exists, deposit into the Green Organics Cart.",
-                "Diverting organics prevents anaerobic decomposition and methane gas generation in landfills."
-            )
-        )
+        "bottle" to TfCategoryProfile("Plastic / Glass Bottle", "Plastics (PET #1)", 0.94f, "RECYCLE", "Rinse, remove cap if non-recyclable, and sort into recycling container."),
+        "can" to TfCategoryProfile("Aluminum / Tin Can", "Metals (ALU #41)", 0.96f, "RECYCLE", "Empty liquid, crush flat to save space, and place into metal recyclables."),
+        "cup" to TfCategoryProfile("Beverage Cup / Tumbler", "Paper / Plastic Composite", 0.91f, "REDUCE", "Carry a reusable silicone or stainless travel tumbler."),
+        "cardboard" to TfCategoryProfile("Cardboard Packaging", "Paper & Fibers (PAP 20)", 0.95f, "RECYCLE", "Flatten boxes to conserve bin volume and keep clean from oils."),
+        "paper" to TfCategoryProfile("Paper / Document", "Cellulose Paper", 0.93f, "RECYCLE", "Recycle clean paper or reuse blank sides for notes and scrap paper."),
+        "container" to TfCategoryProfile("Food Container / Tupperware", "Polypropylene (PP #5)", 0.92f, "REUSE", "Wash and reuse for meal prep, food storage, or hardware organizing."),
+        "bag" to TfCategoryProfile("Shopping Bag", "Low-Density Polyethylene (LDPE #4)", 0.89f, "REUSE", "Keep folded in backpack for grocery shopping to eliminate single-use bags."),
+        "electronics" to TfCategoryProfile("Electronic Device / E-Waste", "Composite Electronics", 0.97f, "REPAIR", "Repair device or drop off at certified municipal E-Waste recycling center."),
+        "glass" to TfCategoryProfile("Glass Container / Jar", "Soda-Lime Glass (GL #70)", 0.95f, "REUSE", "Sterilize in boiling water for pantry bulk spice and preserve storage."),
+        "organic" to TfCategoryProfile("Food Waste / Peels", "Organic Biomass", 0.96f, "COMPOST", "Add to garden soil or home countertop composting unit for rich compost.")
     )
 
     private data class TfCategoryProfile(
@@ -229,9 +50,7 @@ class TfLiteObjectDetector(private val context: Context) {
         val material: String,
         val baseConfidence: Float,
         val action: String,
-        val tip: String,
-        val waysToReuse: List<String> = emptyList(),
-        val waysToDispose: List<String> = emptyList()
+        val tip: String
     )
 
     /**
@@ -299,8 +118,6 @@ class TfLiteObjectDetector(private val context: Context) {
                     boundingBox = RectF(0.18f, 0.20f, 0.82f, 0.80f),
                     material = profile.material,
                     recommendedAction = profile.action,
-                    waysToReuse = profile.waysToReuse,
-                    waysToDispose = profile.waysToDispose,
                     suggestions = listOf(
                         profile.tip,
                         "Check for resin identification number or manufacturer mark before sorting.",

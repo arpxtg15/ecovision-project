@@ -81,11 +81,7 @@ data class WasteItem(
     val sustainabilityProfileDescription: String? = null,
     val recyclabilityScore: Int = 90,
     val isAiAnalyzed: Boolean = false,
-    val aiModelUsed: String? = null,
-    val waysToReuse: List<String> = emptyList(),
-    val waysToDispose: List<String> = emptyList(),
-    val detectedByTensorFlow: Boolean = false,
-    val tensorFlowConfidence: Float = 0f
+    val aiModelUsed: String? = null
 )
 
 object WasteRepositoryData {

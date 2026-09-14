@@ -71,7 +71,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.ai.tflite.TfLiteDetectedObject
 import com.example.ar.ArHitMarker
 import com.example.data.model.EcoActionType
 import com.example.data.model.WasteCategory
@@ -100,7 +99,6 @@ fun WasteScannerScreen(
     selectedItem: WasteItem?,
     currentAiProfile: AiSustainabilityProfileResult? = null,
     capturedFrameBitmap: Bitmap? = null,
-    tfLiteDetectedObjects: List<TfLiteDetectedObject> = emptyList(),
     searchQuery: String,
     activeFilter: WasteCategory?,
     showDetailDialog: Boolean,
@@ -111,7 +109,6 @@ fun WasteScannerScreen(
     onRetryScan: () -> Unit = {},
     onDismissError: () -> Unit = {},
     onDismissDialog: () -> Unit,
-    onRefreshGeminiSuggestions: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var isArViewfinderExpanded by remember { mutableStateOf(false) }
@@ -354,7 +351,6 @@ fun WasteScannerScreen(
                         DetectedObjectResultCard(
                             detected = detectedObj,
                             onClick = {
-                                val reuseSuggestions = if (detectedObj.upcyclingIdea != null) listOf(detectedObj.upcyclingIdea) else detectedObj.suggestions
                                 val syntheticItem = WasteItem(
                                     id = "detected_${detectedObj.id}",
                                     name = detectedObj.name,
@@ -365,18 +361,14 @@ fun WasteScannerScreen(
                                     carbonFootprint = detectedObj.carbonFootprint.ifBlank { "Lifecycle impact" },
                                     recyclingBinType = detectedObj.recyclingBinType.ifBlank { "Sorting stream" },
                                     stepByStepGuide = detectedObj.suggestions,
-                                    upcyclingIdeas = reuseSuggestions,
-                                    waysToReuse = reuseSuggestions,
-                                    waysToDispose = detectedObj.suggestions,
+                                    upcyclingIdeas = if (detectedObj.upcyclingIdea != null) listOf(detectedObj.upcyclingIdea) else detectedObj.suggestions,
                                     ecoFriendlyAlternative = "Reusable alternative",
                                     funFact = detectedObj.reason,
                                     arVisualBadge = "♻️ ${detectedObj.actionTitle}",
                                     sustainabilityProfileDescription = detectedObj.suggestions.joinToString("\n• ", prefix = "• "),
                                     recyclabilityScore = (detectedObj.confidence * 100).toInt().coerceIn(40, 99),
                                     isAiAnalyzed = true,
-                                    aiModelUsed = "Gemini 3.5 Flash",
-                                    detectedByTensorFlow = true,
-                                    tensorFlowConfidence = detectedObj.confidence
+                                    aiModelUsed = "Gemini 3.5 Flash"
                                 )
                                 onSelectItem(syntheticItem)
                             },
@@ -588,171 +580,6 @@ fun WasteScannerScreen(
                             }
                         }
                         Spacer(modifier = Modifier.height(10.dp))
-                    }
-
-                    // Sequential Chained AI Card: TensorFlow Detection -> Gemini Suggestions for Reuse & Disposal
-                    val waysToReuse = if (selectedItem.waysToReuse.isNotEmpty()) selectedItem.waysToReuse else selectedItem.upcyclingIdeas
-                    val waysToDispose = if (selectedItem.waysToDispose.isNotEmpty()) selectedItem.waysToDispose else selectedItem.stepByStepGuide
-                    val hasTensorFlowOrGeminiSuggestions = waysToReuse.isNotEmpty() || waysToDispose.isNotEmpty() || selectedItem.detectedByTensorFlow
-
-                    if (hasTensorFlowOrGeminiSuggestions) {
-                        Surface(
-                            shape = RoundedCornerShape(14.dp),
-                            color = Color(0xFFF1F8E9),
-                            border = BorderStroke(1.5.dp, EcoGreenPrimary),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 12.dp)
-                                .testTag("chained_tf_gemini_card")
-                        ) {
-                            Column(modifier = Modifier.padding(12.dp)) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text(text = "⚡", fontSize = 16.sp)
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                        Text(
-                                            text = "TensorFlow + Gemini AI",
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 13.sp,
-                                            color = EcoGreenPrimaryDark
-                                        )
-                                    }
-                                    Surface(
-                                        shape = RoundedCornerShape(6.dp),
-                                        color = EcoGreenPrimary
-                                    ) {
-                                        Text(
-                                            text = "Chained Pipeline",
-                                            color = LightCreamGreen,
-                                            fontSize = 9.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                        )
-                                    }
-                                }
-
-                                Spacer(modifier = Modifier.height(8.dp))
-
-                                // Step 1: TensorFlow Detected Object
-                                Surface(
-                                    shape = RoundedCornerShape(8.dp),
-                                    color = Color.White,
-                                    border = BorderStroke(1.dp, EcoMintBorder),
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Column(modifier = Modifier.padding(8.dp)) {
-                                        Text(
-                                            text = "STAGE 1: TENSORFLOW DETECTED OBJECT",
-                                            fontSize = 10.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = Color(0xFFE65100)
-                                        )
-                                        Spacer(modifier = Modifier.height(2.dp))
-                                        Text(
-                                            text = "🔍 ${selectedItem.name} (${selectedItem.materialType})",
-                                            fontSize = 12.sp,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = MaterialTheme.colorScheme.onSurface
-                                        )
-                                        val confPercent = (selectedItem.tensorFlowConfidence * 100).toInt().coerceAtLeast(88)
-                                        Text(
-                                            text = "TensorFlow edge classification: $confPercent% match",
-                                            fontSize = 10.sp,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                }
-
-                                Spacer(modifier = Modifier.height(8.dp))
-
-                                // Step 2A: Gemini Suggested Ways to Reuse
-                                if (waysToReuse.isNotEmpty()) {
-                                    Surface(
-                                        shape = RoundedCornerShape(8.dp),
-                                        color = Color(0xFFE1F5FE),
-                                        border = BorderStroke(1.dp, Color(0xFF81D4FA)),
-                                        modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp)
-                                    ) {
-                                        Column(modifier = Modifier.padding(8.dp)) {
-                                            Text(
-                                                text = "STAGE 2A: GEMINI SUGGESTED WAYS TO REUSE",
-                                                fontSize = 10.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = Color(0xFF01579B)
-                                            )
-                                            Spacer(modifier = Modifier.height(4.dp))
-                                            waysToReuse.forEach { reuseIdea ->
-                                                Text(
-                                                    text = "💡 $reuseIdea",
-                                                    fontSize = 11.sp,
-                                                    color = Color(0xFF0D47A1),
-                                                    lineHeight = 15.sp,
-                                                    modifier = Modifier.padding(bottom = 2.dp)
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-
-                                // Step 2B: Gemini Suggested Ways to Dispose
-                                if (waysToDispose.isNotEmpty()) {
-                                    Surface(
-                                        shape = RoundedCornerShape(8.dp),
-                                        color = Color(0xFFE8F5E9),
-                                        border = BorderStroke(1.dp, Color(0xFFA5D6A7)),
-                                        modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp)
-                                    ) {
-                                        Column(modifier = Modifier.padding(8.dp)) {
-                                            Text(
-                                                text = "STAGE 2B: GEMINI SUGGESTED WAYS TO DISPOSE",
-                                                fontSize = 10.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = Color(0xFF1B5E20)
-                                            )
-                                            Spacer(modifier = Modifier.height(4.dp))
-                                            waysToDispose.forEach { disposeStep ->
-                                                Text(
-                                                    text = "🗑️ $disposeStep",
-                                                    fontSize = 11.sp,
-                                                    color = Color(0xFF2E7D32),
-                                                    lineHeight = 15.sp,
-                                                    modifier = Modifier.padding(bottom = 2.dp)
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Button(
-                                    onClick = onRefreshGeminiSuggestions,
-                                    colors = ButtonDefaults.buttonColors(containerColor = EcoGreenPrimary),
-                                    shape = RoundedCornerShape(8.dp),
-                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .testTag("refresh_gemini_suggestions_button")
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Filled.AutoAwesome,
-                                        contentDescription = null,
-                                        tint = Color.White,
-                                        modifier = Modifier.size(14.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text(
-                                        text = "Ask Gemini for More Suggestions",
-                                        color = Color.White,
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                            }
-                        }
                     }
 
                     // Confidence and Recognition Warning if low confidence

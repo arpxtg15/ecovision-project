@@ -3,7 +3,6 @@ package com.example.data.repository
 import android.graphics.Bitmap
 import android.util.Log
 import com.example.BuildConfig
-import com.example.ai.tflite.TfLiteDetectedObject
 import com.example.ar.ArHitMarker
 import com.example.data.local.Product3REntity
 import com.example.data.model.EcoActionType
@@ -36,23 +35,13 @@ interface IGeminiSustainabilityRepository {
     val configuredModelName: String
 
     /**
-     * Performs multimodal visual sustainability analysis using captured camera frame or uploaded image,
-     * chaining with on-device TensorFlow detection results to suggest ways to reuse or dispose.
+     * Performs multimodal visual sustainability analysis using captured camera frame or uploaded image.
      */
     suspend fun analyzeProductFrame(
         bitmap: Bitmap?,
         detectedMarker: ArHitMarker? = null,
-        barcode: String? = null,
-        tfDetectedObjects: List<TfLiteDetectedObject> = emptyList()
+        barcode: String? = null
     ): Result<AiSustainabilityProfileResult>
-
-    /**
-     * Generates focused ways to reuse or dispose using Gemini, based on a detected object.
-     */
-    suspend fun suggestWaysToReuseOrDispose(
-        item: WasteItem,
-        tfObject: TfLiteDetectedObject? = null
-    ): Result<Pair<List<String>, List<String>>>
 
     /**
      * Performs text-based sustainability analysis for a product name, material label, or barcode search.
@@ -122,15 +111,13 @@ class GeminiSustainabilityRepository private constructor() : IGeminiSustainabili
     override suspend fun analyzeProductFrame(
         bitmap: Bitmap?,
         detectedMarker: ArHitMarker?,
-        barcode: String?,
-        tfDetectedObjects: List<TfLiteDetectedObject>
+        barcode: String?
     ): Result<AiSustainabilityProfileResult> = withContext(Dispatchers.IO) {
         try {
             val profile = GeminiSustainabilityAnalyzer.analyzeFrame(
                 bitmap = bitmap,
                 detectedMarker = detectedMarker,
-                barcodeInput = barcode,
-                tfDetectedObjects = tfDetectedObjects
+                barcodeInput = barcode
             )
             Result.success(profile)
         } catch (e: Exception) {
@@ -138,81 +125,10 @@ class GeminiSustainabilityRepository private constructor() : IGeminiSustainabili
             val fallback = GeminiSustainabilityAnalyzer.createFallbackSustainabilityProfile(
                 bitmap = bitmap,
                 detectedMarker = detectedMarker,
-                barcodeInput = barcode,
-                tfDetectedObjects = tfDetectedObjects
+                barcodeInput = barcode
             )
             Result.success(fallback)
         }
-    }
-
-    override suspend fun suggestWaysToReuseOrDispose(
-        item: WasteItem,
-        tfObject: TfLiteDetectedObject?
-    ): Result<Pair<List<String>, List<String>>> = withContext(Dispatchers.IO) {
-        val apiKey = getApiKey()
-        val objectName = tfObject?.label ?: item.name
-        val material = tfObject?.material ?: item.materialType
-
-        if (isApiKeyConfigured) {
-            try {
-                val prompt = """
-                    You are an expert circular economy advisor.
-                    A physical item was detected by TensorFlow: "$objectName" (Material: "$material").
-                    
-                    Please generate:
-                    1. "waysToReuse": 4 creative, practical, and safe ways to reuse, upcycle, repurpose, or repair this item.
-                    2. "waysToDispose": 4 exact step-by-step proper disposal, sorting, cleaning, or recycling preparation instructions.
-                    
-                    Return ONLY valid JSON in this format:
-                    {
-                      "waysToReuse": ["Idea 1", "Idea 2", "Idea 3", "Idea 4"],
-                      "waysToDispose": ["Step 1", "Step 2", "Step 3", "Step 4"]
-                    }
-                """.trimIndent()
-
-                val request = GeminiGenerateRequest(
-                    contents = listOf(GeminiContent(parts = listOf(GeminiPart(text = prompt)))),
-                    generationConfig = GeminiGenerationConfig(temperature = 0.3f, maxOutputTokens = 1024)
-                )
-                val response = GeminiClient.service.generateContent(apiKey, request)
-                val text = response.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text
-                if (!text.isNullOrBlank()) {
-                    var clean = text.replace("```json", "").replace("```", "").trim()
-                    val start = clean.indexOf('{')
-                    val end = clean.lastIndexOf('}')
-                    if (start != -1 && end != -1 && end > start) {
-                        clean = clean.substring(start, end + 1)
-                        val json = JSONObject(clean)
-                        val reuses = mutableListOf<String>()
-                        val disposes = mutableListOf<String>()
-                        val rArr = json.optJSONArray("waysToReuse")
-                        if (rArr != null) {
-                            for (i in 0 until rArr.length()) {
-                                val s = rArr.optString(i, "").trim()
-                                if (s.isNotBlank()) reuses.add(s)
-                            }
-                        }
-                        val dArr = json.optJSONArray("waysToDispose")
-                        if (dArr != null) {
-                            for (i in 0 until dArr.length()) {
-                                val s = dArr.optString(i, "").trim()
-                                if (s.isNotBlank()) disposes.add(s)
-                            }
-                        }
-                        if (reuses.isNotEmpty() && disposes.isNotEmpty()) {
-                            return@withContext Result.success(Pair(reuses, disposes))
-                        }
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to query Gemini for reuse/dispose suggestions: ${e.message}", e)
-            }
-        }
-
-        // Deterministic fallback
-        val defaultReuses = tfObject?.waysToReuse?.ifEmpty { item.upcyclingIdeas } ?: item.upcyclingIdeas
-        val defaultDisposes = tfObject?.waysToDispose?.ifEmpty { item.stepByStepGuide } ?: item.stepByStepGuide
-        Result.success(Pair(defaultReuses, defaultDisposes))
     }
 
     override suspend fun analyzeProductQuery(

@@ -253,17 +253,14 @@ class EcoViewModel(application: Application) : AndroidViewModel(application) {
                 // 1. Run local on-device TensorFlow Lite object detection
                 val tfObjects = tfLiteObjectDetector.detectObjects(bitmap)
 
-                // 2. Pass TensorFlow detected objects directly into Gemini to formulate tailored reuse and disposal guidance
                 val result = repository.geminiRepository.analyzeProductFrame(
                     bitmap = bitmap,
-                    detectedMarker = detectedMarker,
-                    tfDetectedObjects = tfObjects
+                    detectedMarker = detectedMarker
                 )
                 val aiResult = result.getOrElse {
                     GeminiSustainabilityAnalyzer.createFallbackSustainabilityProfile(
                         bitmap = bitmap,
-                        detectedMarker = detectedMarker,
-                        tfDetectedObjects = tfObjects
+                        detectedMarker = detectedMarker
                     )
                 }
                 val wasteItem = aiResult.toWasteItem()
@@ -278,9 +275,7 @@ class EcoViewModel(application: Application) : AndroidViewModel(application) {
                 }
 
                 val detectedCount = aiResult.detectedObjects.size
-                val statusMsg = if (tfObjects.isNotEmpty()) {
-                    "TensorFlow detected '${tfObjects.first().label}' • Gemini suggested Reuse & Disposal"
-                } else if (detectedCount > 1) {
+                val statusMsg = if (detectedCount > 1) {
                     "Identified $detectedCount objects with TensorFlow & Gemini"
                 } else {
                     "Identified: ${aiResult.itemName}"
@@ -314,40 +309,6 @@ class EcoViewModel(application: Application) : AndroidViewModel(application) {
 
     fun clearScanError() {
         _scannerState.update { it.copy(scanErrorMessage = null) }
-    }
-
-    /**
-     * Re-queries Gemini specifically to formulate new creative ways to reuse or dispose
-     * of the currently selected or TensorFlow-detected item.
-     */
-    fun requestGeminiReuseAndDisposalRefresh(tfObject: TfLiteDetectedObject? = null) {
-        val currentItem = _scannerState.value.selectedItem ?: return
-        viewModelScope.launch {
-            _scannerState.update { it.copy(isAnalyzing = true) }
-            val res = repository.geminiRepository.suggestWaysToReuseOrDispose(currentItem, tfObject)
-            res.onSuccess { (reuses, disposes) ->
-                val updatedItem = currentItem.copy(
-                    waysToReuse = reuses,
-                    waysToDispose = disposes,
-                    upcyclingIdeas = reuses,
-                    stepByStepGuide = disposes
-                )
-                _scannerState.update {
-                    it.copy(
-                        isAnalyzing = false,
-                        selectedItem = updatedItem,
-                        scanSuccessMessage = "Gemini generated tailored reuse & disposal suggestions!"
-                    )
-                }
-            }.onFailure { e ->
-                _scannerState.update {
-                    it.copy(
-                        isAnalyzing = false,
-                        scanErrorMessage = "Failed to refresh Gemini suggestions: ${e.localizedMessage}"
-                    )
-                }
-            }
-        }
     }
 
     fun retryLastScan() {

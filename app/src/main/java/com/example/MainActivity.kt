@@ -179,7 +179,6 @@ fun EcoVisionApp(
                     selectedItem = scannerState.selectedItem,
                     currentAiProfile = scannerState.currentAiProfile,
                     capturedFrameBitmap = scannerState.capturedFrameBitmap,
-                    tfLiteDetectedObjects = scannerState.tfLiteDetectedObjects,
                     searchQuery = scannerState.scanSearchQuery,
                     activeFilter = scannerState.activeFilterCategory,
                     showDetailDialog = scannerState.showDetailDialog,
@@ -189,8 +188,7 @@ fun EcoVisionApp(
                     onTriggerScan = { bitmap, marker -> viewModel.analyzeDetectedObjectFrame(bitmap, marker) },
                     onRetryScan = { viewModel.retryLastScan() },
                     onDismissError = { viewModel.clearScanError() },
-                    onDismissDialog = { viewModel.dismissDetailDialog() },
-                    onRefreshGeminiSuggestions = { viewModel.requestGeminiReuseAndDisposalRefresh() }
+                    onDismissDialog = { viewModel.dismissDetailDialog() }
                 )
             }
 
