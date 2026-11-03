@@ -2,6 +2,7 @@ package com.example.ui.screens
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,6 +38,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -46,6 +48,7 @@ import com.example.data.local.CompletedChallengeEntity
 import com.example.data.model.EcoChallenge
 import com.example.data.model.EcoTip
 import com.example.data.model.TipTimeContext
+import com.example.ui.theme.DarkText
 import com.example.ui.theme.EcoGreenPrimary
 import com.example.ui.theme.EcoGreenPrimaryDark
 import com.example.ui.theme.EcoGreenSecondary
@@ -53,6 +56,7 @@ import com.example.ui.theme.EcoMintBorder
 import com.example.ui.theme.EcoMintContainer
 import com.example.ui.theme.EcoMintContainerLow
 import com.example.ui.theme.LightCreamGreen
+import com.example.ui.theme.SoftPaleGreen
 
 @Composable
 fun EcoTipsAndChallengesScreen(
@@ -94,13 +98,22 @@ fun EcoTipsAndChallengesScreen(
             }
         }
 
-        // 2. Feedback Banner in Light Green
+        // 2. Feedback Banner with Frosted Glass Styling
         if (feedbackMessage != null) {
             item {
                 Surface(
                     shape = RoundedCornerShape(14.dp),
-                    color = EcoMintContainer,
-                    border = BorderStroke(1.dp, EcoMintBorder),
+                    color = Color(0xF2FFFFFF),
+                    border = BorderStroke(
+                        1.dp,
+                        Brush.verticalGradient(
+                            listOf(
+                                Color.White.copy(alpha = 0.95f),
+                                EcoGreenPrimary.copy(alpha = 0.4f)
+                            )
+                        )
+                    ),
+                    shadowElevation = 3.dp,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 20.dp, vertical = 4.dp)
@@ -127,7 +140,7 @@ fun EcoTipsAndChallengesScreen(
             }
         }
 
-        // 3. Time Context Filters
+        // 3. Time Context Filters with Frosted Glass Styling
         item {
             Column(
                 modifier = Modifier
@@ -143,18 +156,18 @@ fun EcoTipsAndChallengesScreen(
                             selected = isSelected,
                             onClick = { onSelectContext(ctx) },
                             label = { Text("${ctx.iconEmoji} ${ctx.label}", fontSize = 12.sp) },
-                            shape = RoundedCornerShape(12.dp),
+                            shape = RoundedCornerShape(14.dp),
                             border = FilterChipDefaults.filterChipBorder(
                                 enabled = true,
                                 selected = isSelected,
-                                borderColor = EcoMintBorder,
+                                borderColor = SoftPaleGreen.copy(alpha = 0.8f),
                                 selectedBorderColor = EcoGreenPrimary
                             ),
                             colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = EcoMintContainer,
+                                selectedContainerColor = Color(0xE6EDF7ED),
                                 selectedLabelColor = EcoGreenPrimaryDark,
-                                containerColor = MaterialTheme.colorScheme.surface,
-                                labelColor = MaterialTheme.colorScheme.onSurface
+                                containerColor = Color(0xD9FFFFFF),
+                                labelColor = DarkText.copy(alpha = 0.8f)
                             )
                         )
                     }
@@ -220,9 +233,18 @@ private fun CleanTipCard(
         modifier = modifier
             .fillMaxWidth()
             .testTag("eco_tip_card_${tip.id}"),
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, EcoMintBorder.copy(alpha = 0.8f))
+        shape = RoundedCornerShape(18.dp),
+        color = Color(0xF2FFFFFF),
+        border = BorderStroke(
+            1.dp,
+            Brush.verticalGradient(
+                listOf(
+                    Color.White.copy(alpha = 0.95f),
+                    SoftPaleGreen.copy(alpha = 0.5f)
+                )
+            )
+        ),
+        shadowElevation = 3.dp
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
             Row(
@@ -232,8 +254,8 @@ private fun CleanTipCard(
             ) {
                 Surface(
                     shape = RoundedCornerShape(8.dp),
-                    color = EcoMintContainer,
-                    border = BorderStroke(1.dp, EcoMintBorder)
+                    color = Color(0xE6EDF7ED),
+                    border = BorderStroke(1.dp, SoftPaleGreen.copy(alpha = 0.8f))
                 ) {
                     Text(
                         text = "${tip.context.iconEmoji} ${tip.category}",
@@ -257,7 +279,7 @@ private fun CleanTipCard(
                 text = tip.title,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
+                color = DarkText
             )
 
             Spacer(modifier = Modifier.height(2.dp))
@@ -265,7 +287,7 @@ private fun CleanTipCard(
             Text(
                 text = tip.description,
                 fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = DarkText.copy(alpha = 0.7f),
                 lineHeight = 16.sp
             )
 
@@ -274,7 +296,7 @@ private fun CleanTipCard(
             Button(
                 onClick = onComplete,
                 colors = ButtonDefaults.buttonColors(containerColor = EcoGreenPrimary),
-                shape = RoundedCornerShape(10.dp),
+                shape = RoundedCornerShape(12.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(38.dp)
@@ -311,12 +333,18 @@ private fun CleanChallengeCard(
         modifier = modifier
             .fillMaxWidth()
             .testTag("challenge_card_${challenge.id}"),
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(18.dp),
+        color = Color(0xF2FFFFFF),
         border = BorderStroke(
             1.dp,
-            if (isFinished) EcoGreenPrimary else EcoMintBorder.copy(alpha = 0.8f)
-        )
+            Brush.verticalGradient(
+                listOf(
+                    Color.White.copy(alpha = 0.95f),
+                    if (isFinished) EcoGreenPrimary.copy(alpha = 0.5f) else SoftPaleGreen.copy(alpha = 0.5f)
+                )
+            )
+        ),
+        shadowElevation = 4.dp
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
             Row(
@@ -326,7 +354,8 @@ private fun CleanChallengeCard(
                     modifier = Modifier
                         .size(38.dp)
                         .clip(CircleShape)
-                        .background(EcoMintContainer),
+                        .background(Color(0xE6EDF7ED))
+                        .border(1.dp, SoftPaleGreen.copy(alpha = 0.8f), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(text = challenge.iconEmoji, fontSize = 20.sp)
@@ -337,19 +366,19 @@ private fun CleanChallengeCard(
                         text = challenge.title,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = DarkText
                     )
                     Text(
                         text = "${challenge.durationDays}-Day Habit Sprint",
                         fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = DarkText.copy(alpha = 0.65f)
                     )
                 }
                 if (isFinished) {
                     Surface(
                         shape = RoundedCornerShape(8.dp),
-                        color = EcoMintContainer,
-                        border = BorderStroke(1.dp, EcoMintBorder)
+                        color = Color(0xE6EDF7ED),
+                        border = BorderStroke(1.dp, SoftPaleGreen.copy(alpha = 0.8f))
                     ) {
                         Text(
                             text = "COMPLETED 🏆",
@@ -367,7 +396,7 @@ private fun CleanChallengeCard(
             Text(
                 text = challenge.description,
                 fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = DarkText.copy(alpha = 0.7f),
                 lineHeight = 16.sp
             )
 
@@ -381,7 +410,7 @@ private fun CleanChallengeCard(
                 Text(
                     text = "Day $completedDays of ${challenge.durationDays}",
                     fontSize = 11.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = DarkText.copy(alpha = 0.65f)
                 )
                 Text(
                     text = "${(progressFraction * 100).toInt()}%",
@@ -400,7 +429,7 @@ private fun CleanChallengeCard(
                     .height(6.dp)
                     .clip(RoundedCornerShape(3.dp)),
                 color = EcoGreenPrimary,
-                trackColor = EcoMintContainer
+                trackColor = Color(0x66D6EED6)
             )
 
             if (!isFinished) {
@@ -408,7 +437,7 @@ private fun CleanChallengeCard(
                 Button(
                     onClick = onAdvance,
                     colors = ButtonDefaults.buttonColors(containerColor = EcoGreenPrimary),
-                    shape = RoundedCornerShape(10.dp),
+                    shape = RoundedCornerShape(12.dp),
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(36.dp)

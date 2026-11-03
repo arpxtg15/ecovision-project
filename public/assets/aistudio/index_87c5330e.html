@@ -1,0 +1,781 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#02231f">
+<title>EcoVision – Augmented Reality for a Sustainable Future</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#02231f;--ink2:#0b3a33;--cream:#f6f2e4;--green:#4f9f2a;--green-d:#1e5b12;--gold:#f2c94c;--muted:#5d6b66;--line:#e3e0d0;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+html,body{height:100%}
+@supports(height:100dvh){html,body{height:100dvh}}
+body{font-family:Montserrat,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:#cfd8d2;color:var(--ink);display:flex;justify-content:center;overflow:hidden}
+button{font-family:inherit;cursor:pointer;border:0;background:none;color:inherit}
+#app{position:relative;width:100%;max-width:480px;height:100%;background:var(--cream);overflow:hidden;box-shadow:0 0 40px rgba(0,0,0,.25)}
+.screen{position:absolute;inset:0;display:none;flex-direction:column;overflow:hidden}
+.screen.active{display:flex}
+.screen.dark{background:#000;color:#fff}
+
+/* splash */
+#splash{background:var(--ink);align-items:center;justify-content:center;text-align:center;padding:24px}
+.splash-logo{font-size:clamp(34px,10vw,52px);font-weight:500;letter-spacing:.06em;color:#e8dfc0}
+.splash-tag{margin-top:14px;font-size:10px;letter-spacing:.32em;color:#e8dfc0;opacity:.85}
+
+/* shared */
+.topbar{display:flex;align-items:center;gap:12px;padding:calc(14px + env(safe-area-inset-top)) 16px 10px}
+.topbar h2{font-size:18px;font-weight:800;color:var(--green-d)}
+.topbar.over{position:absolute;left:0;right:0;top:0;z-index:5;background:linear-gradient(rgba(0,0,0,.6),transparent);justify-content:space-between}
+.back{background:var(--green);color:#fff;border-radius:999px;padding:9px 16px;font-weight:700;font-size:14px}
+.snap{background:rgba(255,255,255,.92);color:var(--ink);border-radius:999px;padding:9px 14px;font-weight:700;font-size:14px}
+#toast{position:absolute;top:calc(14px + env(safe-area-inset-top));left:50%;transform:translate(-50%,-140%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:999px;font-size:13px;font-weight:600;z-index:50;transition:transform .3s;max-width:92%;text-align:center;box-shadow:0 6px 20px rgba(0,0,0,.3);pointer-events:none}
+#toast.show{transform:translate(-50%,0)}
+
+/* menu */
+.menu-head{padding:calc(36px + env(safe-area-inset-top)) 22px 8px;text-align:center;position:relative}
+.menu-head h1{font-size:38px;font-weight:800;color:var(--green-d);letter-spacing:-.5px}
+.menu-head p{font-size:12px;color:var(--muted);margin-top:4px;letter-spacing:.04em}
+.hud{margin-top:14px;background:var(--ink);color:#e8dfc0;border-radius:999px;padding:8px 16px;font-weight:700;font-size:13px}
+.menu-body{flex:1;overflow:auto;padding:14px 20px 28px;display:flex;flex-direction:column;gap:14px}
+.card{display:flex;align-items:center;gap:16px;background:#fff;border-radius:20px;padding:18px;text-align:left;box-shadow:0 6px 18px rgba(2,35,31,.08);width:100%}
+.card:active{transform:scale(.98)}
+.card .ic{font-size:28px;width:54px;height:54px;border-radius:16px;background:#e9f3e0;display:grid;place-items:center;flex:none}
+.card b{display:block;font-size:18px;color:var(--green-d);font-weight:800}
+.card small{display:block;font-size:12.5px;color:var(--muted);margin-top:3px}
+.tipcard{background:var(--ink);color:#e8dfc0;border-radius:20px;padding:16px 18px}
+.tipcard small{display:block;color:var(--gold);font-weight:700;font-size:12px;margin-bottom:6px}
+.tipcard p{font-size:14px;line-height:1.5}
+
+/* scanner */
+.cam{position:absolute;inset:0;background:#0a1412;overflow:hidden}
+.cam video{width:100%;height:100%;object-fit:cover;display:block}
+.cam canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.cam-msg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:40px 30px 200px;font-size:14px;line-height:1.5;color:#cfe3d8}
+.status{position:absolute;top:calc(64px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);background:rgba(2,35,31,.82);color:#fff;font-size:12.5px;font-weight:600;padding:8px 14px;border-radius:999px;z-index:4;max-width:92%;text-align:center}
+.controls{position:absolute;left:0;right:0;bottom:0;height:104px;display:flex;align-items:center;justify-content:space-around;padding:0 18px calc(8px + env(safe-area-inset-bottom));background:linear-gradient(transparent,rgba(0,0,0,.75));z-index:6}
+.ctl{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;font-weight:700;color:#fff;width:76px}
+.ctl span{font-size:24px;width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,.18);display:grid;place-items:center}
+.shutter{width:70px;height:70px;border-radius:50%;background:var(--green);border:5px solid #fff;box-shadow:0 0 0 3px rgba(255,255,255,.35)}
+.shutter:active{transform:scale(.93)}
+.sheet{position:absolute;left:10px;right:10px;bottom:104px;max-height:58%;overflow:auto;background:#fff;color:var(--ink);border-radius:22px;padding:16px 18px 18px;z-index:7;transform:translateY(130%);transition:transform .3s;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.sheet.show{transform:none}
+.sheet-head{display:flex;align-items:center;gap:12px}
+.sheet-head .em{font-size:34px}
+.sheet-head h3{font-size:19px;font-weight:800;color:var(--green-d)}
+.badge{display:inline-block;color:#fff;font-size:12px;font-weight:700;border-radius:999px;padding:3px 10px;margin-top:4px}
+.x{margin-left:auto;font-size:20px;width:34px;height:34px;border-radius:50%;background:#eee}
+.bin{margin-top:12px;font-size:13px;font-weight:700;color:var(--ink2)}
+.sheet ol{margin:10px 0 0 20px;font-size:13.5px;line-height:1.55}
+.impact{margin-top:12px;font-size:13px;line-height:1.5;color:var(--muted)}
+.ecotip{margin-top:12px;background:#fff7d6;border-radius:14px;padding:11px 13px;font-size:13px;font-weight:600;line-height:1.45}
+.picker{position:absolute;inset:0;background:rgba(0,0,0,.6);z-index:20;display:flex;align-items:flex-end}
+.picker-box{background:#fff;color:var(--ink);width:100%;max-height:78%;overflow:auto;border-radius:24px 24px 0 0;padding:18px}
+.picker-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;font-size:16px}
+.picker-head button{font-size:18px;width:34px;height:34px;border-radius:50%;background:#eee}
+.pick-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.pick-grid button{background:#f1f5ec;border-radius:16px;padding:12px 6px;font-size:12px;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:6px}
+.pick-grid button span{font-size:28px}
+
+/* light screens */
+.screen.light{background:var(--cream)}
+.tabs{display:flex;gap:8px;padding:4px 16px 10px;overflow-x:auto;flex:none}
+.tabs button{white-space:nowrap;background:#fff;border-radius:999px;padding:9px 15px;font-size:13px;font-weight:700;color:var(--green-d);border:2px solid transparent}
+.tabs button.on{background:var(--green);color:#fff}
+.sol-body{flex:1;overflow:auto;padding:4px 16px 28px}
+.sol-intro{font-size:13.5px;color:var(--muted);line-height:1.5;margin:4px 2px 12px}
+.acc{background:#fff;border-radius:16px;margin-bottom:10px;box-shadow:0 4px 12px rgba(2,35,31,.06);overflow:hidden}
+.acc-h{width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:15px 16px;text-align:left;font-size:14.5px;font-weight:700;color:var(--green-d)}
+.acc-h i{font-style:normal;font-size:20px;color:var(--green);transition:transform .2s}
+.acc.open .acc-h i{transform:rotate(45deg)}
+.acc-b{display:none;padding:0 16px 16px;font-size:13.5px;line-height:1.6}
+.acc.open .acc-b{display:block}
+
+/* hub */
+.stage{position:absolute;inset:0;background:linear-gradient(#35574f,#0b1f1c);overflow:hidden;touch-action:none}
+.stage video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.hub-item{position:absolute;touch-action:none;cursor:grab;filter:drop-shadow(0 6px 8px rgba(0,0,0,.4))}
+.hub-item svg{width:100%;height:100%;display:block;pointer-events:none}
+.hub-item.sel{outline:2px dashed var(--gold);outline-offset:4px;border-radius:12px}
+.hub-info{position:absolute;left:10px;right:10px;bottom:132px;background:rgba(255,255,255,.96);color:var(--ink);border-radius:18px;padding:12px 14px;display:flex;gap:10px;align-items:center;justify-content:space-between;z-index:8}
+.hub-info b{font-size:14px;color:var(--green-d)}
+.hub-info p{font-size:12.5px;line-height:1.45;margin-top:2px}
+.hub-ctl{display:flex;gap:6px;flex:none}
+.hub-ctl button{width:36px;height:36px;border-radius:12px;background:#eef3e8;font-size:18px;font-weight:800}
+.hint{position:absolute;top:calc(70px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);background:rgba(2,35,31,.8);padding:8px 14px;border-radius:999px;font-size:12.5px;font-weight:600;z-index:4;white-space:nowrap}
+.palette{position:absolute;left:0;right:0;bottom:0;display:flex;gap:10px;overflow-x:auto;padding:12px 14px calc(12px + env(safe-area-inset-bottom));background:linear-gradient(transparent,rgba(0,0,0,.8) 30%);z-index:9}
+.palette button{flex:none;width:84px;background:rgba(255,255,255,.95);color:var(--ink);border-radius:16px;padding:8px 4px;font-size:11px;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:4px}
+.palette svg{width:48px;height:48px}
+
+/* challenges */
+.lvl-card{margin:4px 16px 14px;background:var(--ink);color:#e8dfc0;border-radius:22px;padding:18px}
+.lvl-card h3{font-size:20px;font-weight:800}
+.lvl-card p{font-size:13px;margin-top:4px;opacity:.85}
+.bar{height:10px;border-radius:99px;background:rgba(255,255,255,.18);margin-top:12px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--gold);border-radius:99px;transition:width .4s}
+#chList{flex:1;overflow:auto;padding:0 16px 10px}
+.ch{background:#fff;border-radius:16px;padding:14px 16px;margin-bottom:10px;box-shadow:0 4px 12px rgba(2,35,31,.06)}
+.ch-top{display:flex;align-items:center;gap:10px;font-size:14.5px;font-weight:700;color:var(--green-d)}
+.ch-top span{font-size:22px}
+.ch-top em{margin-left:auto;font-style:normal;font-size:12px;color:var(--muted)}
+.ch .bar{background:#e9eee4;height:8px}
+.ch .bar i{background:var(--green)}
+.ch.done .bar i{background:var(--gold)}
+.link{margin:4px auto 20px;font-size:12px;color:var(--muted);text-decoration:underline}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- SPLASH -->
+  <section id="splash" class="screen active" data-go="menu">
+    <div class="splash-logo">ECOVISION</div>
+    <div class="splash-tag">AUGMENTED REALITY FOR A SUSTAINABLE FUTURE</div>
+  </section>
+
+  <!-- MAIN MENU -->
+  <section id="menu" class="screen">
+    <div class="menu-head">
+      <h1>EcoVision</h1>
+      <p>Augmented reality for a sustainable future</p>
+      <button class="hud" id="hud" data-go="challenges">🌱 0 pts · Lv 1</button>
+    </div>
+    <div class="menu-body">
+      <button class="card" data-go="scanner"><span class="ic">📷</span><span><b>Scanner</b><small>Point your camera at an item to learn how to dispose of it</small></span></button>
+      <button class="card" data-go="hub"><span class="ic">🏡</span><span><b>Virtual Hub</b><small>Place solar panels, compost bins and plants in your space</small></span></button>
+      <button class="card" data-go="solutions"><span class="ic">📖</span><span><b>Information</b><small>Sustainability solutions: plastic, water, forests, recycling</small></span></button>
+      <button class="card" data-go="challenges"><span class="ic">🏆</span><span><b>Eco Challenges</b><small>Earn points and level up as you learn</small></span></button>
+      <div class="tipcard" id="tipCard"><small>💡 Eco tip · tap for another</small><p id="tipText"></p></div>
+    </div>
+  </section>
+
+  <!-- SCANNER -->
+  <section id="scanner" class="screen dark">
+    <div class="cam">
+      <video id="scanVideo" playsinline muted autoplay></video>
+      <canvas id="scanOverlay"></canvas>
+      <div id="camMsg" class="cam-msg" hidden></div>
+    </div>
+    <div class="topbar over"><button class="back" data-go="menu">← Back</button></div>
+    <div id="scanStatus" class="status">Initializing camera…</div>
+
+    <div id="resultSheet" class="sheet">
+      <div class="sheet-head">
+        <div class="em" id="resEmoji">♻️</div>
+        <div><h3 id="resName"></h3><span class="badge" id="resBadge"></span></div>
+        <button class="x" id="resClose" aria-label="Close">✕</button>
+      </div>
+      <div class="bin" id="resBin"></div>
+      <ol id="resSteps"></ol>
+      <div class="impact" id="resImpact"></div>
+      <div class="ecotip">💡 <span id="resTip"></span></div>
+    </div>
+
+    <div class="controls">
+      <button class="ctl" id="btnPick"><span>🔎</span>Pick item</button>
+      <button class="shutter" id="btnScan" aria-label="Scan item"></button>
+      <label class="ctl"><span>🖼️</span>Photo<input type="file" id="photoInput" accept="image/*" hidden></label>
+    </div>
+
+    <div id="picker" class="picker" hidden>
+      <div class="picker-box">
+        <div class="picker-head"><b>What are you holding?</b><button id="pickClose" aria-label="Close">✕</button></div>
+        <div class="pick-grid" id="pickGrid"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SOLUTIONS -->
+  <section id="solutions" class="screen light">
+    <div class="topbar"><button class="back" data-go="menu">← Back</button><h2>Sustainability Solutions</h2></div>
+    <div class="tabs" id="solTabs"></div>
+    <div class="sol-body" id="solBody"></div>
+  </section>
+
+  <!-- VIRTUAL HUB -->
+  <section id="hub" class="screen dark">
+    <div class="stage" id="hubStage">
+      <video id="hubVideo" playsinline muted autoplay></video>
+    </div>
+    <div class="topbar over"><button class="back" data-go="menu">← Back</button><button class="snap" id="btnSnap">📸 Save</button></div>
+    <div class="hint" id="hubHint">Tap an upgrade below, then drag it into place</div>
+    <div class="hub-info" id="hubInfo" hidden>
+      <div><b id="hubName"></b><p id="hubTip"></p></div>
+      <div class="hub-ctl"><button id="hubMinus" aria-label="Smaller">−</button><button id="hubPlus" aria-label="Bigger">+</button><button id="hubDel" aria-label="Remove">🗑️</button></div>
+    </div>
+    <div class="palette" id="palette"></div>
+  </section>
+
+  <!-- CHALLENGES -->
+  <section id="challenges" class="screen light">
+    <div class="topbar"><button class="back" data-go="menu">← Back</button><h2>Eco Challenges</h2></div>
+    <div class="lvl-card">
+      <h3 id="chLevel"></h3>
+      <p id="chPoints"></p>
+      <div class="bar"><i id="chBar" style="width:0%"></i></div>
+    </div>
+    <div id="chList"></div>
+    <button class="link" id="btnReset">Reset my progress</button>
+  </section>
+
+  <div id="toast" role="status"></div>
+</div>
+
+<script>
+(function(){
+'use strict';
+var $=function(s){return document.querySelector(s)};
+var $$=function(s){return Array.prototype.slice.call(document.querySelectorAll(s))};
+
+/* =====================================================
+   DATA: sustainability database
+   ===================================================== */
+var ACTIONS={
+  recycle:{label:'Recycle',icon:'♻️',color:'#3f8f22'},
+  reuse:{label:'Reuse',icon:'🔁',color:'#2e86c1'},
+  replace:{label:'Replace',icon:'🔄',color:'#d9822b'},
+  compost:{label:'Compost',icon:'🌱',color:'#8e6b3e'},
+  special:{label:'Special disposal',icon:'⚠️',color:'#c0392b'}
+};
+
+var ITEMS={
+  bottle:{name:'Bottle',emoji:'🧴',action:'recycle',bin:'Dry / recyclable bin',
+    steps:['Empty it and give it a quick rinse.','Check the recycling symbol: #1 (PET) and #2 (HDPE) plastics are widely accepted.','Glass bottles go in glass collection, kept separate from ceramics.','Squash plastic bottles to save space, then add them to dry recyclables.'],
+    impact:'Plastic can take hundreds of years to break down, but PET bottles can be turned into fibres, bags and new bottles.',
+    tip:'Carry a refillable bottle. The greenest bottle is the one you never throw away.'},
+  cup:{name:'Cup / mug',emoji:'☕',action:'reuse',bin:'Keep using it, or donate',
+    steps:['Use a reusable cup or mug instead of disposable ones.','Disposable paper cups usually have a plastic lining, so many recyclers cannot take them.','If a mug is chipped, repurpose it as a pen holder or plant pot.'],
+    impact:'Every reusable cup in daily use replaces hundreds of throw-away cups over its life.',
+    tip:'Keep a mug at your desk or in your bag so you never need a disposable one.'},
+  glassware:{name:'Glassware / vase',emoji:'🍷',action:'reuse',bin:'Donate, or special glass collection',
+    steps:['Reuse it as a jar, vase or storage container.','Donate it if it is still in good condition.','Do not mix drinking glasses with bottle-glass recycling. They melt at different temperatures.','Wrap broken glass in paper and label it before disposal.'],
+    impact:'Reusing glass saves the energy and raw materials needed to make a new item.',
+    tip:'Glass jars make great free storage for grains, spices and craft supplies.'},
+  cutlery:{name:'Cutlery & bowls',emoji:'🍴',action:'reuse',bin:'Reuse or donate',
+    steps:['Carry your own spoon or fork to avoid plastic cutlery.','Donate spare tableware to charity shops or community kitchens.','Metal cutlery can go to scrap-metal collectors when it is worn out.'],
+    impact:'Single-use cutlery is used for minutes but lasts for centuries in landfill.',
+    tip:'Say "no cutlery please" when ordering takeaway.'},
+  book:{name:'Book / paper',emoji:'📚',action:'reuse',bin:'Donate, or dry paper recycling',
+    steps:['Donate or swap books with friends, schools and libraries.','Use both sides of loose paper before recycling it.','Keep paper dry and clean. Greasy or food-stained paper cannot be recycled.'],
+    impact:'Recycling paper reduces the number of trees that need to be cut down.',
+    tip:'Borrow, swap or read digitally to give books a longer life.'},
+  electronics:{name:'Electronics',emoji:'📱',action:'special',bin:'E-waste collection point',
+    steps:['Never put electronics in the normal bin. They contain metals and chemicals.','Wipe your personal data, then hand the device to an authorised e-waste collector or take-back scheme.','If it still works, donate or sell it, or repair it before replacing.'],
+    impact:'Phones, laptops and TVs contain valuable metals that can be recovered when recycled properly.',
+    tip:'Repair first, recycle second. Extending a device\'s life by a year or two cuts its footprint.'},
+  food:{name:'Food waste',emoji:'🍌',action:'compost',bin:'Wet waste / compost bin',
+    steps:['Put fruit and vegetable scraps in a compost bin or the wet-waste bin.','Keep meat, oil and dairy out of home compost.','Use compost as free fertiliser for plants.'],
+    impact:'Food in landfill releases methane, a powerful greenhouse gas. Composting avoids it.',
+    tip:'Plan meals and use leftovers. The best compost is the food you never waste.'},
+  plant:{name:'Plant / pot',emoji:'🪴',action:'reuse',bin:'Garden or compost',
+    steps:['Reuse old pots, or give cuttings to friends.','Compost dead leaves and soil.','Water in the evening to reduce evaporation.'],
+    impact:'Plants cool their surroundings, clean the air and support insects and birds.',
+    tip:'Water plants with leftover water from washing vegetables or from your RO reject water.'},
+  bag:{name:'Bag / backpack',emoji:'🎒',action:'reuse',bin:'Repair, reuse or donate',
+    steps:['Repair zips and straps before replacing a bag.','Donate bags you no longer use.','Choose a bag made from durable or recycled material next time.'],
+    impact:'A bag used for years has a far smaller footprint per use than a series of cheap replacements.',
+    tip:'Keep a foldable cloth bag in your backpack to refuse plastic carry bags.'},
+  toothbrush:{name:'Toothbrush',emoji:'🪥',action:'replace',bin:'General waste (plastic)',
+    steps:['Plastic toothbrushes cannot usually be recycled at home.','Switch to a bamboo toothbrush or one with replaceable heads.','Reuse an old brush for cleaning small spaces.'],
+    impact:'Billions of plastic toothbrushes are thrown away every year.',
+    tip:'Replace your toothbrush with a bamboo one when it wears out.'},
+  container:{name:'Plastic container',emoji:'🥡',action:'recycle',bin:'Dry / recyclable bin',
+    steps:['Rinse off food residue so it does not contaminate other recyclables.','Check the recycling symbol: look for #1 or #5.','Let it dry, then add it to dry recyclables.','Reuse good containers for storage before recycling.'],
+    impact:'Dirty containers can spoil a whole batch of recycling.',
+    tip:'Reuse takeaway boxes for lunch or leftovers before recycling them.'},
+  wrapper:{name:'Snack wrapper',emoji:'🍬',action:'replace',bin:'General waste (check local schemes)',
+    steps:['Multi-layer wrappers are very hard to recycle.','Some cities and brands run wrapper collection drives. Check for one near you.','Buy larger packs, loose or bulk items to cut down on wrappers.'],
+    impact:'Small wrappers are among the most common litter items because they are light and easily blown away.',
+    tip:'Choose snacks in paper or reusable packaging, or buy in bulk.'},
+  tetra:{name:'Tetra Pack (juice / milk carton)',emoji:'🧃',action:'recycle',bin:'Dry waste, or carton collection point',
+    steps:['Empty and rinse the carton.','Flatten it to save space.','Put it with dry recyclables or drop it at a carton collection point.','Cartons are layers of paperboard, plastic and aluminium, so they need specialised recycling.'],
+    impact:'Recycled cartons can become paper products and building boards.',
+    tip:'Where possible, pick refillable or bulk options over cartons.'},
+  paper:{name:'Paper waste',emoji:'📰',action:'recycle',bin:'Dry paper recycling',
+    steps:['Collect used office paper, newspapers and magazines.','Keep them dry and free of food or grease.','Remove plastic covers and staples where easy.','Use both sides of the page before recycling.'],
+    impact:'Recycling paper saves trees, water and energy compared with making it from scratch.',
+    tip:'Go digital where you can, and print double-sided when you must print.'},
+  cfl:{name:'CFL / tube light',emoji:'💡',action:'special',bin:'Hazardous / e-waste collection point',
+    steps:['Do not throw CFLs or tube lights into the normal bin.','They contain a small amount of mercury, so avoid breaking them.','Store used lamps in their original box and hand them to a hazardous-waste or e-waste collector.','If one breaks, ventilate the room and clean up carefully with gloves and damp paper.'],
+    impact:'Proper collection keeps mercury out of soil and water.',
+    tip:'Replace old lamps with LED bulbs. They last longer and use less electricity.'},
+  battery:{name:'Battery',emoji:'🔋',action:'special',bin:'Battery / e-waste collection point',
+    steps:['Never put batteries in the normal bin or burn them.','Use a collection box at a shop, school or e-waste centre.','Tape the terminals of lithium batteries before handing them in.','Switch to rechargeable batteries.'],
+    impact:'Batteries contain metals and chemicals that can leak into soil and water.',
+    tip:'Rechargeable batteries can replace hundreds of single-use ones.'},
+  can:{name:'Metal can',emoji:'🥫',action:'recycle',bin:'Dry / recyclable bin',
+    steps:['Empty and rinse the can.','Aluminium and steel cans are both recyclable.','Place in dry recyclables.'],
+    impact:'Aluminium can be recycled again and again, using far less energy than making new metal.',
+    tip:'Choose a refillable bottle instead of canned drinks when you can.'},
+  polybag:{name:'Plastic carry bag',emoji:'🛍️',action:'replace',bin:'Dry waste (if clean)',
+    steps:['Reuse bags as many times as you can.','Replace them with a cloth or jute bag.','Return clean, dry bags to a collection point if your area has one.'],
+    impact:'Light plastic bags blow into drains, rivers and farmland.',
+    tip:'Keep a cloth bag by the door so you never forget it.'}
+};
+
+/* Which COCO-SSD labels map to which item */
+var COCO_MAP={
+  'bottle':'bottle','cup':'cup','wine glass':'glassware','vase':'glassware',
+  'bowl':'cutlery','fork':'cutlery','knife':'cutlery','spoon':'cutlery',
+  'book':'book','cell phone':'electronics','laptop':'electronics','tv':'electronics',
+  'remote':'electronics','keyboard':'electronics','mouse':'electronics',
+  'banana':'food','apple':'food','orange':'food','sandwich':'food','broccoli':'food',
+  'carrot':'food','hot dog':'food','pizza':'food','donut':'food','cake':'food',
+  'potted plant':'plant','backpack':'bag','handbag':'bag','suitcase':'bag','toothbrush':'toothbrush'
+};
+
+var TIPS=[
+  'Turn off lights and fans when you leave a room.',
+  'Carry a reusable water bottle and say no to single-use plastic.',
+  'Fix leaking taps. Drips add up to many litres a day.',
+  'Segregate waste into wet and dry at home.',
+  'Use both sides of the paper before recycling it.',
+  'Walk, cycle or use public transport for short trips.',
+  'Switch old bulbs to LEDs to save electricity.',
+  'Buy only what you need. The greenest product is the one you reuse.',
+  'Turn off the tap while brushing your teeth.',
+  'Plant a tree or a few pots. Plants cool and clean the air.'
+];
+
+var SOLUTIONS={
+  plastic:{label:'🥤 Plastic',intro:'Plastic is useful but long-lasting. These small habits cut how much of it you use.',tips:[
+    {id:'pl1',t:'Say no to single-use items',b:'Carry a reusable bag, bottle and cup. Refuse straws and plastic cutlery when ordering takeaway.'},
+    {id:'pl2',t:'Choose refills and bulk',b:'Buy refills for soap, detergent and grains, and choose loose or bulk items to avoid extra packaging.'},
+    {id:'pl3',t:'Reuse before you recycle',b:'Jars, boxes and bottles make good storage. Reusing keeps them out of the bin for longer.'},
+    {id:'pl4',t:'Cut down on microplastics',b:'Synthetic clothes shed tiny fibres when washed. Wash full loads less often and choose natural fabrics when you can.'}
+  ]},
+  water:{label:'💧 Water',intro:'Fresh water is limited. Saving it starts with everyday habits.',tips:[
+    {id:'wa1',t:'Fix leaks quickly',b:'A dripping tap or running toilet wastes a surprising amount of water over a day. Report or repair leaks as soon as you see them.'},
+    {id:'wa2',t:'Use less in the bathroom',b:'Take shorter showers, use a bucket where you can, and turn off the tap while brushing or shaving.'},
+    {id:'wa3',t:'Reuse water',b:'Use RO reject water or water from washing vegetables for mopping and watering plants.'},
+    {id:'wa4',t:'Water plants wisely',b:'Water in the early morning or evening to reduce evaporation. Mulch soil to keep it moist.'},
+    {id:'wa5',t:'Harvest rainwater',b:'A rain barrel or rainwater harvesting pit stores water for gardens and cleaning and helps recharge groundwater.'}
+  ]},
+  forest:{label:'🌳 Forests',intro:'Forests store carbon, protect water and shelter wildlife.',tips:[
+    {id:'fo1',t:'Save paper',b:'Print less, use both sides, and choose recycled paper.'},
+    {id:'fo2',t:'Look for certified products',b:'Choose wood and paper with a credible sustainable-forestry label such as FSC.'},
+    {id:'fo3',t:'Plant and protect trees',b:'Join school or community plantation drives and choose native species, which support local wildlife.'},
+    {id:'fo4',t:'Waste less food',b:'Growing food takes land. Wasting less reduces pressure to clear forests for farms.'}
+  ]},
+  recycle:{label:'♻️ Recycling guide',intro:'Tap an item to see how to prepare it for recycling.',tips:[
+    {id:'re1',t:'Clean plastic containers (food storage, takeout boxes)',b:'Rinse off food residue and check the recycling symbol. Look for #1 or #5. Let them dry, then place in dry recyclables.'},
+    {id:'re2',t:'Paper waste (used office paper, newspapers, magazines)',b:'Keep paper dry and clean. Remove plastic covers, then bundle it for the dry paper collection.'},
+    {id:'re3',t:'Tetra Packs (juice and milk cartons)',b:'Empty, rinse and flatten cartons. Take them to a carton collection point or place in dry waste where accepted.'},
+    {id:'re4',t:'CFL / tube lights',b:'These contain a little mercury. Never break them or bin them. Hand them to a hazardous or e-waste collection point.'},
+    {id:'re5',t:'Batteries and electronics',b:'Take them to an authorised e-waste or battery collection point. Repair or donate working devices.'},
+    {id:'re6',t:'Glass bottles and jars',b:'Rinse and keep glass separate. Reuse jars at home before recycling.'}
+  ]}
+};
+
+var MODELS={
+  solar:{name:'Solar panel',tip:'Rooftop solar produces clean electricity and can cut your power bill.',
+    svg:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M18 24h70l-10 44H8z" fill="#17427a" stroke="#d9e2ec" stroke-width="3" stroke-linejoin="round"/><path d="M31 24 21 68M54 24l-8 44M72 24 66 68M13 46h72M10 57h71" stroke="#d9e2ec" stroke-width="1.6" fill="none"/><path d="M43 68v16M30 86h30" stroke="#8b949b" stroke-width="5" stroke-linecap="round"/></svg>'},
+  compost:{name:'Compost bin',tip:'Turns kitchen and garden scraps into free fertiliser and keeps food waste out of landfill.',
+    svg:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M24 32h52l-5 52a4 4 0 0 1-4 4H33a4 4 0 0 1-4-4z" fill="#6b4a2f"/><rect x="19" y="22" width="62" height="12" rx="5" fill="#4a3321"/><rect x="42" y="16" width="16" height="7" rx="3" fill="#4a3321"/><path d="M50 74c-11-2-15-13-12-22 11 0 20 7 20 16 0 4-3 6-8 6z" fill="#7bc043"/><path d="M50 74c0-9 3-14 8-18" stroke="#2f6b1a" stroke-width="2" fill="none"/></svg>'},
+  plant:{name:'Indoor plant',tip:'Plants cool and freshen a room and make a space feel calmer.',
+    svg:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M30 66h40l-5 22H35z" fill="#c4683a"/><rect x="27" y="60" width="46" height="9" rx="3" fill="#d9794a"/><path d="M50 60V34" stroke="#2f7d2a" stroke-width="4" stroke-linecap="round"/><path d="M50 46C36 46 28 36 28 24c14 0 22 8 22 22z" fill="#4fae3a"/><path d="M50 40C62 40 72 32 72 18c-14 0-22 10-22 22z" fill="#6cc24a"/></svg>'},
+  barrel:{name:'Rain barrel',tip:'Collects rainwater for plants and cleaning, saving tap water.',
+    svg:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect x="24" y="26" width="52" height="60" rx="10" fill="#2e86c1"/><rect x="22" y="38" width="56" height="5" fill="#1b5f8c"/><rect x="22" y="68" width="56" height="5" fill="#1b5f8c"/><rect x="28" y="20" width="44" height="9" rx="4" fill="#1b5f8c"/><rect x="72" y="72" width="12" height="6" rx="2" fill="#8b949b"/><path d="M50 46c-6 7-9 11-9 15a9 9 0 0 0 18 0c0-4-3-8-9-15z" fill="#bfe6ff"/></svg>'},
+  led:{name:'LED bulb',tip:'LED bulbs use much less electricity than old bulbs and last far longer.',
+    svg:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M50 12a24 24 0 0 0-14 43c3 3 4 6 4 10h20c0-4 1-7 4-10A24 24 0 0 0 50 12z" fill="#ffd54a" stroke="#e0a800" stroke-width="2"/><rect x="40" y="68" width="20" height="6" rx="2" fill="#9aa3a8"/><rect x="42" y="76" width="16" height="6" rx="2" fill="#7c868c"/><path d="M45 85h10" stroke="#555" stroke-width="3" stroke-linecap="round"/><path d="M44 36l6 8 6-8" stroke="#e0a800" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>'}
+};
+
+var CHALLENGES=[
+  {id:'scan3',icon:'🔍',title:'Scan 3 items',goal:3,val:function(s){return s.scans}},
+  {id:'unique5',icon:'🧩',title:'Identify 5 different items',goal:5,val:function(s){return s.seen.length}},
+  {id:'read5',icon:'📖',title:'Read 5 solution tips',goal:5,val:function(s){return s.read.length}},
+  {id:'place3',icon:'🏡',title:'Place 3 eco upgrades at home',goal:3,val:function(s){return s.placed}}
+];
+var LEVEL_TITLES=['Seedling','Sprout','Sapling','Young Tree','Forest Guardian'];
+
+/* =====================================================
+   STATE (saved in the browser)
+   ===================================================== */
+function freshState(){return {points:0,scans:0,seen:[],read:[],placed:0,done:[]};}
+function loadState(){
+  var s=freshState();
+  try{var raw=localStorage.getItem('ecovision-state'); if(raw){var o=JSON.parse(raw); for(var k in s){if(o[k]!==undefined) s[k]=o[k];}}}catch(e){}
+  return s;
+}
+var S=loadState();
+function save(){try{localStorage.setItem('ecovision-state',JSON.stringify(S));}catch(e){}}
+function level(){var n=Math.floor(S.points/50)+1; return {n:n,title:LEVEL_TITLES[Math.min(n-1,LEVEL_TITLES.length-1)],into:S.points%50};}
+function refreshHud(){var l=level(); $('#hud').textContent='🌱 '+S.points+' pts · Lv '+l.n;}
+function addPoints(n,msg){S.points+=n; save(); refreshHud(); toast('+'+n+' eco points'+(msg?' · '+msg:'')); checkChallenges();}
+function checkChallenges(){
+  CHALLENGES.forEach(function(c){
+    if(S.done.indexOf(c.id)===-1 && c.val(S)>=c.goal){
+      S.done.push(c.id); S.points+=25; save(); refreshHud();
+      setTimeout(function(){toast('🏆 Challenge complete: '+c.title+' (+25)');},900);
+    }
+  });
+}
+
+/* =====================================================
+   UI helpers
+   ===================================================== */
+var toastTimer;
+function toast(msg){var t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(function(){t.classList.remove('show');},2600);}
+
+var current='splash';
+function go(id){
+  if(id===current) return;
+  if(current==='scanner') leaveScanner();
+  if(current==='hub') leaveHub();
+  $$('.screen').forEach(function(s){s.classList.toggle('active',s.id===id);});
+  current=id;
+  if(id==='scanner') enterScanner();
+  if(id==='hub') enterHub();
+  if(id==='challenges') renderChallenges();
+  if(id==='menu') refreshHud();
+}
+document.addEventListener('click',function(e){var t=e.target.closest('[data-go]'); if(t) go(t.getAttribute('data-go'));});
+setTimeout(function(){if(current==='splash') go('menu');},1800);
+
+/* rotating tip on the menu */
+var tipIdx=Math.floor(Math.random()*TIPS.length);
+function showTip(){$('#tipText').textContent=TIPS[tipIdx];}
+$('#tipCard').addEventListener('click',function(){tipIdx=(tipIdx+1)%TIPS.length; showTip();});
+showTip(); refreshHud();
+
+/* =====================================================
+   CAMERA
+   ===================================================== */
+var stream=null;
+function startCamera(video){
+  stopCamera();
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
+    return Promise.reject({name:'Unsupported'});
+  }
+  return navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false}).then(function(s){
+    stream=s; video.srcObject=s; return video.play();
+  });
+}
+function stopCamera(){
+  if(stream){stream.getTracks().forEach(function(t){t.stop();}); stream=null;}
+}
+function camError(e){
+  if(e&&e.name==='NotAllowedError') return 'Camera permission was denied. Allow camera access in your browser settings, then reopen the scanner.\n\nYou can still use "Pick item".';
+  if(e&&e.name==='NotFoundError') return 'No camera was found on this device.\n\nYou can still use "Pick item" or "Photo".';
+  return 'The camera could not start. On a phone, open this page over HTTPS (or localhost).\n\nYou can still use "Pick item" or "Photo".';
+}
+
+/* =====================================================
+   AI MODEL (TensorFlow.js COCO-SSD, loaded on demand)
+   ===================================================== */
+var modelPromise=null;
+function loadScript(src){
+  return new Promise(function(res,rej){
+    var s=document.createElement('script'); s.src=src; s.onload=res;
+    s.onerror=function(){rej(new Error('Could not load '+src));};
+    document.head.appendChild(s);
+  });
+}
+function loadModel(){
+  if(!modelPromise){
+    modelPromise=loadScript('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js')
+      .then(function(){return loadScript('https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js');})
+      .then(function(){return cocoSsd.load({base:'lite_mobilenet_v2'});})
+      .catch(function(e){modelPromise=null; throw e;});
+  }
+  return modelPromise;
+}
+
+/* =====================================================
+   SCANNER
+   ===================================================== */
+var vid=$('#scanVideo'), ov=$('#scanOverlay');
+var model=null, scanning=false, scanToken=0, lastRun=0, lastKey=null, streak=0, emptyCount=0, shownKey=null;
+
+function setStatus(t){$('#scanStatus').textContent=t;}
+
+function enterScanner(){
+  var token=++scanToken;
+  scanning=false; lastKey=null; streak=0; emptyCount=0;
+  hideResult();
+  $('#camMsg').hidden=true;
+  setStatus('Initializing camera…');
+  startCamera(vid).then(function(){
+    if(token!==scanToken){stopCamera(); return;}
+    setStatus('Loading AI model…');
+    return loadModel().then(function(m){
+      if(token!==scanToken) return;
+      model=m; scanning=true;
+      setStatus('Point the camera at an item');
+      requestAnimationFrame(loop);
+    },function(){
+      if(token!==scanToken) return;
+      setStatus('AI model could not load (needs internet). Use "Pick item".');
+    });
+  },function(e){
+    if(token!==scanToken) return;
+    var m=$('#camMsg'); m.textContent=camError(e); m.style.whiteSpace='pre-line'; m.hidden=false;
+    setStatus('Camera unavailable');
+  });
+}
+function leaveScanner(){scanToken++; scanning=false; stopCamera(); clearOverlay(); $('#picker').hidden=true;}
+
+function loop(){
+  if(!scanning) return;
+  var now=performance.now();
+  if(now-lastRun>350 && vid.readyState>=2){
+    lastRun=now;
+    model.detect(vid,6).then(function(preds){if(scanning) handlePreds(preds);}).catch(function(){}).then(function(){if(scanning) requestAnimationFrame(loop);});
+  } else {
+    requestAnimationFrame(loop);
+  }
+}
+
+function handlePreds(preds){
+  var good=preds.filter(function(p){return p.score>=0.5 && COCO_MAP[p.class];}).sort(function(a,b){return b.score-a.score;});
+  drawBoxes(good);
+  if(!good.length){emptyCount++; if(emptyCount>6){streak=0; lastKey=null;} return;}
+  emptyCount=0;
+  var key=COCO_MAP[good[0].class];
+  if(key===lastKey) streak++; else {lastKey=key; streak=1;}
+  if(streak>=2 && key!==shownKey) showItem(key);
+}
+
+function fit(){
+  var r=vid.parentElement.getBoundingClientRect();
+  var vw=vid.videoWidth||1, vh=vid.videoHeight||1;
+  var sc=Math.max(r.width/vw,r.height/vh);
+  return {w:r.width,h:r.height,sc:sc,ox:(r.width-vw*sc)/2,oy:(r.height-vh*sc)/2};
+}
+function roundRect(c,x,y,w,h,r){
+  r=Math.min(r,w/2,h/2);
+  c.beginPath(); c.moveTo(x+r,y); c.arcTo(x+w,y,x+w,y+h,r); c.arcTo(x+w,y+h,x,y+h,r); c.arcTo(x,y+h,x,y,r); c.arcTo(x,y,x+w,y,r); c.closePath();
+}
+function clearOverlay(){var c=ov.getContext('2d'); c.clearRect(0,0,ov.width,ov.height);}
+/* AR-style overlay: box + action label drawn on top of the live camera */
+function drawBoxes(list){
+  var f=fit(); ov.width=f.w; ov.height=f.h;
+  var c=ov.getContext('2d'); c.clearRect(0,0,f.w,f.h);
+  list.forEach(function(p){
+    var X=p.bbox[0]*f.sc+f.ox, Y=p.bbox[1]*f.sc+f.oy, W=p.bbox[2]*f.sc, H=p.bbox[3]*f.sc;
+    var it=ITEMS[COCO_MAP[p.class]], a=ACTIONS[it.action];
+    c.lineWidth=3; c.strokeStyle=a.color; roundRect(c,X,Y,W,H,10); c.stroke();
+    var label=a.icon+' '+a.label+' · '+it.name;
+    c.font='600 14px Montserrat,system-ui,sans-serif';
+    var tw=c.measureText(label).width+16, ly=Math.max(4,Y-30);
+    c.fillStyle=a.color; roundRect(c,X,ly,tw,26,13); c.fill();
+    c.fillStyle='#fff'; c.fillText(label,X+8,ly+18);
+  });
+}
+
+function showItem(key){
+  var it=ITEMS[key], a=ACTIONS[it.action], isNew=(key!==shownKey);
+  shownKey=key;
+  $('#resEmoji').textContent=it.emoji;
+  $('#resName').textContent=it.name;
+  var b=$('#resBadge'); b.textContent=a.icon+' '+a.label; b.style.background=a.color;
+  $('#resBin').textContent='🗑️ '+it.bin;
+  $('#resSteps').innerHTML=it.steps.map(function(s){return '<li>'+s+'</li>';}).join('');
+  $('#resImpact').textContent=it.impact;
+  $('#resTip').textContent=it.tip;
+  $('#resultSheet').classList.add('show');
+  if(isNew) registerScan(key);
+}
+function hideResult(){$('#resultSheet').classList.remove('show'); shownKey=null;}
+function registerScan(key){
+  S.scans++;
+  var first=S.seen.indexOf(key)===-1;
+  if(first) S.seen.push(key);
+  addPoints(first?10:2, first?'new item!':'');
+}
+$('#resClose').addEventListener('click',hideResult);
+
+/* manual scan button */
+$('#btnScan').addEventListener('click',function(){
+  if(!model||!scanning){toast('Scanner is not ready. Try "Pick item".'); return;}
+  model.detect(vid,10).then(function(preds){
+    var hits=preds.filter(function(p){return p.score>=0.3 && COCO_MAP[p.class];}).sort(function(a,b){return b.score-a.score;});
+    drawBoxes(hits);
+    if(hits.length) showItem(COCO_MAP[hits[0].class]);
+    else toast('Could not recognise that. Try "Pick item".');
+  }).catch(function(){toast('Scan failed, please try again.');});
+});
+
+/* photo upload (works without a live camera) */
+$('#photoInput').addEventListener('change',function(e){
+  var f=e.target.files[0]; if(!f) return;
+  setStatus('Analysing photo…');
+  loadModel().then(function(m){
+    var img=new Image(); img.src=URL.createObjectURL(f);
+    return img.decode().then(function(){return m.detect(img,10);});
+  }).then(function(preds){
+    var hits=preds.filter(function(p){return p.score>=0.3 && COCO_MAP[p.class];}).sort(function(a,b){return b.score-a.score;});
+    if(hits.length) showItem(COCO_MAP[hits[0].class]); else toast('Could not recognise that. Try "Pick item".');
+    setStatus(scanning?'Point the camera at an item':'Photo analysed');
+  }).catch(function(){setStatus('Could not analyse photo'); toast('Photo analysis needs an internet connection.');});
+  e.target.value='';
+});
+
+/* manual item picker (also covers items the AI cannot see, like wrappers or Tetra Packs) */
+(function(){
+  var grid=$('#pickGrid');
+  Object.keys(ITEMS).forEach(function(k){
+    var b=document.createElement('button');
+    b.innerHTML='<span>'+ITEMS[k].emoji+'</span>'+ITEMS[k].name.split(' (')[0];
+    b.addEventListener('click',function(){$('#picker').hidden=true; showItem(k);});
+    grid.appendChild(b);
+  });
+  $('#btnPick').addEventListener('click',function(){$('#picker').hidden=false;});
+  $('#pickClose').addEventListener('click',function(){$('#picker').hidden=true;});
+})();
+
+/* =====================================================
+   SOLUTIONS PAGE
+   ===================================================== */
+var solTab='plastic';
+function renderSolutions(){
+  var tabs=$('#solTabs'); tabs.innerHTML='';
+  Object.keys(SOLUTIONS).forEach(function(k){
+    var b=document.createElement('button'); b.textContent=SOLUTIONS[k].label; if(k===solTab) b.className='on';
+    b.addEventListener('click',function(){solTab=k; renderSolutions();});
+    tabs.appendChild(b);
+  });
+  var body=$('#solBody'); body.innerHTML='';
+  var sec=SOLUTIONS[solTab];
+  var intro=document.createElement('p'); intro.className='sol-intro'; intro.textContent=sec.intro; body.appendChild(intro);
+  sec.tips.forEach(function(t){
+    var d=document.createElement('div'); d.className='acc';
+    d.innerHTML='<button class="acc-h"><span></span><i>+</i></button><div class="acc-b"></div>';
+    d.querySelector('span').textContent=t.t; d.querySelector('.acc-b').textContent=t.b;
+    d.querySelector('.acc-h').addEventListener('click',function(){
+      d.classList.toggle('open');
+      if(d.classList.contains('open') && S.read.indexOf(t.id)===-1){S.read.push(t.id); addPoints(5,'tip read');}
+    });
+    body.appendChild(d);
+  });
+}
+renderSolutions();
+
+/* =====================================================
+   VIRTUAL SUSTAINABILITY HUB
+   ===================================================== */
+var stage=$('#hubStage'), hubVid=$('#hubVideo');
+var placed=[], selectedId=null, uid=0, hubCam=false;
+
+function enterHub(){
+  hubCam=false; hubVid.style.display='none';
+  startCamera(hubVid).then(function(){hubCam=true; hubVid.style.display='block';},function(){toast('No camera, using a practice background');});
+}
+function leaveHub(){stopCamera();}
+
+(function buildPalette(){
+  var p=$('#palette');
+  Object.keys(MODELS).forEach(function(k){
+    var b=document.createElement('button');
+    b.innerHTML=MODELS[k].svg+'<span>'+MODELS[k].name+'</span>';
+    b.addEventListener('click',function(){addModel(k);});
+    p.appendChild(b);
+  });
+})();
+
+function addModel(type){
+  var r=stage.getBoundingClientRect(), size=110;
+  var it={id:++uid,type:type,size:size,
+    x:r.width/2-size/2+(Math.random()*50-25),
+    y:r.height/2-size/2-40+(Math.random()*50-25)};
+  placed.push(it); renderItem(it); select(it.id);
+  $('#hubHint').hidden=true;
+  S.placed++; addPoints(5,MODELS[type].name+' placed');
+}
+function renderItem(it){
+  var el=document.createElement('div'); el.className='hub-item'; el.id='hi'+it.id;
+  el.innerHTML=MODELS[it.type].svg; place(el,it);
+  var drag=null;
+  el.addEventListener('pointerdown',function(ev){
+    select(it.id); el.setPointerCapture(ev.pointerId);
+    var r=stage.getBoundingClientRect();
+    drag={ox:ev.clientX-r.left-it.x,oy:ev.clientY-r.top-it.y}; ev.preventDefault();
+  });
+  el.addEventListener('pointermove',function(ev){
+    if(!drag) return;
+    var r=stage.getBoundingClientRect();
+    it.x=Math.max(-it.size/3,Math.min(r.width-it.size*2/3,ev.clientX-r.left-drag.ox));
+    it.y=Math.max(40,Math.min(r.height-it.size*2/3,ev.clientY-r.top-drag.oy));
+    place(el,it);
+  });
+  var end=function(){drag=null;};
+  el.addEventListener('pointerup',end); el.addEventListener('pointercancel',end);
+  stage.appendChild(el);
+}
+function place(el,it){el.style.left=it.x+'px'; el.style.top=it.y+'px'; el.style.width=it.size+'px'; el.style.height=it.size+'px';}
+function find(id){for(var i=0;i<placed.length;i++){if(placed[i].id===id) return placed[i];} return null;}
+function select(id){
+  selectedId=id;
+  $$('.hub-item').forEach(function(e){e.classList.toggle('sel',e.id==='hi'+id);});
+  var it=find(id);
+  if(!it){$('#hubInfo').hidden=true; return;}
+  $('#hubName').textContent=MODELS[it.type].name; $('#hubTip').textContent=MODELS[it.type].tip;
+  $('#hubInfo').hidden=false;
+}
+stage.addEventListener('pointerdown',function(e){if(e.target===stage||e.target===hubVid){selectedId=null; select(null);}});
+function resize(d){var it=find(selectedId); if(!it) return; it.size=Math.max(50,Math.min(280,it.size+d)); place($('#hi'+it.id),it);}
+$('#hubPlus').addEventListener('click',function(){resize(18);});
+$('#hubMinus').addEventListener('click',function(){resize(-18);});
+$('#hubDel').addEventListener('click',function(){
+  var it=find(selectedId); if(!it) return;
+  var el=$('#hi'+it.id); if(el) el.remove();
+  placed=placed.filter(function(p){return p.id!==it.id;}); select(null);
+});
+
+function svgImage(svg){
+  return new Promise(function(res,rej){
+    var i=new Image(); i.onload=function(){res(i);}; i.onerror=rej;
+    i.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+  });
+}
+$('#btnSnap').addEventListener('click',function(){
+  var r=stage.getBoundingClientRect(), k=2;
+  var cv=document.createElement('canvas'); cv.width=Math.round(r.width*k); cv.height=Math.round(r.height*k);
+  var c=cv.getContext('2d');
+  if(hubCam && hubVid.videoWidth){
+    var sc=Math.max(r.width/hubVid.videoWidth,r.height/hubVid.videoHeight);
+    var dw=hubVid.videoWidth*sc, dh=hubVid.videoHeight*sc;
+    c.drawImage(hubVid,(r.width-dw)/2*k,(r.height-dh)/2*k,dw*k,dh*k);
+  } else {
+    var g=c.createLinearGradient(0,0,0,cv.height); g.addColorStop(0,'#35574f'); g.addColorStop(1,'#0b1f1c');
+    c.fillStyle=g; c.fillRect(0,0,cv.width,cv.height);
+  }
+  var chain=Promise.resolve();
+  placed.forEach(function(it){
+    chain=chain.then(function(){return svgImage(MODELS[it.type].svg);}).then(function(img){c.drawImage(img,it.x*k,it.y*k,it.size*k,it.size*k);});
+  });
+  chain.then(function(){
+    c.font='700 '+(16*k)+'px sans-serif'; c.fillStyle='rgba(255,255,255,.85)'; c.fillText('EcoVision',14*k,cv.height-14*k);
+    cv.toBlob(function(b){
+      var a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='ecovision-my-space.png'; a.click();
+      setTimeout(function(){URL.revokeObjectURL(a.href);},2000); toast('Snapshot saved 📸');
+    });
+  }).catch(function(){toast('Could not save the snapshot.');});
+});
+
+/* =====================================================
+   CHALLENGES / GAMIFICATION
+   ===================================================== */
+function renderChallenges(){
+  var l=level();
+  $('#chLevel').textContent='Level '+l.n+' · '+l.title;
+  $('#chPoints').textContent=S.points+' eco points · '+(50-l.into)+' to next level';
+  $('#chBar').style.width=(l.into/50*100)+'%';
+  var list=$('#chList'); list.innerHTML='';
+  CHALLENGES.forEach(function(c){
+    var v=Math.min(c.val(S),c.goal), done=S.done.indexOf(c.id)!==-1;
+    var d=document.createElement('div'); d.className='ch'+(done?' done':'');
+    d.innerHTML='<div class="ch-top"><span>'+c.icon+'</span>'+c.title+'<em>'+(done?'✅ Done':v+' / '+c.goal)+'</em></div><div class="bar"><i style="width:'+(v/c.goal*100)+'%"></i></div>';
+    list.appendChild(d);
+  });
+}
+$('#btnReset').addEventListener('click',function(){
+  if(confirm('Reset your points and challenges?')){S=freshState(); save(); refreshHud(); renderChallenges();}
+});
+
+})();
+</script>
+</body>
+</html>

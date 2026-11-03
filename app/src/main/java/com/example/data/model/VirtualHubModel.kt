@@ -189,6 +189,39 @@ object VirtualHubData {
                 "Interactive hands-free proximity sensor trigger",
                 "Real-time water savings meter"
             )
+        ),
+        VirtualHubModel(
+            id = "smart_led_bulb",
+            title = "Ultra-Efficient Smart LED Bulb",
+            category = "Clean Energy",
+            iconEmoji = "💡",
+            shortDescription = "High-efficiency warm LED bulb that uses 85% less electricity than incandescent lamps and lasts 25,000 hours.",
+            realisticScale = 0.7f,
+            modelColorHex = 0xFFFFD54F,
+            secondaryColorHex = 0xFFFFA000,
+            specs = HubModelSpecs(
+                dimensions = "E26 / E27 Base, 60mm diameter x 110mm height",
+                idealPlacement = "Ceiling fixtures, desk lamps, floor lamps, and outdoor porch lighting",
+                estimatedAnnualSavings = "$18 - $25 per bulb / year in electrical energy reduction",
+                carbonOffsetPerYear = "45 kg CO₂e greenhouse emissions eliminated per bulb / year",
+                maintenanceLevel = "Zero (Rated for 15+ years of daily 5-hour operation)",
+                keyBenefits = listOf(
+                    "Consumes only 8.5W to produce equivalent light of traditional 60W bulb",
+                    "Contains zero toxic mercury or hazardous filament metals",
+                    "Emits virtually no excess radiant heat, lowering room cooling costs",
+                    "Instant-on full brightness with zero warm-up flicker"
+                ),
+                installationTips = listOf(
+                    "Turn off light switch fixture before unscrewing old bulb",
+                    "Gently rotate clockwise until snug without over-torquing",
+                    "Ensure dry, rated fixture enclosure"
+                )
+            ),
+            interactiveFeatures = listOf(
+                "Simulate energy consumption (8.5W LED vs 60W Incandescent)",
+                "Interactive lux brightness slider & color temperature adjustment",
+                "Annual electricity bill savings calculator"
+            )
         )
     )
 }

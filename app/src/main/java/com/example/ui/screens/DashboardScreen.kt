@@ -8,7 +8,9 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -28,13 +30,17 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Autorenew
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Eco
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.HomeWork
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Nature
@@ -67,11 +73,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.R
 import com.example.data.local.ScanHistoryEntity
 import com.example.data.local.UserEcoProfileEntity
 import com.example.data.model.DayActivity
@@ -113,6 +123,7 @@ fun DashboardScreen(
     onCycleFact: () -> Unit,
     onNavigateToScanner: () -> Unit,
     onNavigateToSolutions: () -> Unit,
+    onNavigateToVirtualHub: () -> Unit,
     onNavigateToTips: () -> Unit,
     onNavigateToAbout: () -> Unit,
     onQuickScanItem: () -> Unit,
@@ -137,9 +148,17 @@ fun DashboardScreen(
             item {
                 Surface(
                     shape = RoundedCornerShape(14.dp),
-                    color = MaterialTheme.colorScheme.surface,
-                    border = BorderStroke(1.dp, EcoGreenPrimary.copy(alpha = 0.5f)),
-                    shadowElevation = 2.dp,
+                    color = Color(0xF2FFFFFF),
+                    border = BorderStroke(
+                        1.dp,
+                        Brush.verticalGradient(
+                            listOf(
+                                Color.White.copy(alpha = 0.95f),
+                                EcoGreenPrimary.copy(alpha = 0.4f)
+                            )
+                        )
+                    ),
+                    shadowElevation = 3.dp,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(start = 20.dp, top = 8.dp, end = 20.dp, bottom = 4.dp)
@@ -166,12 +185,399 @@ fun DashboardScreen(
             }
         }
 
-        // 2. Header & Eco Journey Overview Card
+        // 2. Hero Scenic AR Banner Card (Matches Mockup)
+        item {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 6.dp)
+                    .clickable { onNavigateToScanner() }
+                    .testTag("hero_scan_card"),
+                shape = RoundedCornerShape(26.dp),
+                color = Color.White,
+                shadowElevation = 3.dp
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(195.dp)
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.img_nature_ar_hero_1791177539002),
+                        contentDescription = "Get the Best Out of Nature",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+
+                    // Soft semi-transparent left scrim for high readability
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(
+                                Brush.horizontalGradient(
+                                    listOf(
+                                        Color(0xF5FFFFFF),
+                                        Color(0xCCFFFFFF),
+                                        Color(0x66FFFFFF),
+                                        Color.Transparent
+                                    )
+                                )
+                            )
+                    )
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(start = 20.dp, top = 20.dp, bottom = 18.dp),
+                        verticalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column {
+                            Text(
+                                text = "Get the Best\nOut of Nature",
+                                fontSize = 23.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF0F3B2C),
+                                lineHeight = 28.sp
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                text = "Scan. Learn. Take Action.\nFor a Greener Tomorrow.",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = Color(0xFF1D4A3B),
+                                lineHeight = 16.sp
+                            )
+                        }
+
+                        // Small leaf icon + line
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Eco,
+                                contentDescription = null,
+                                tint = Color(0xFF288B57),
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Box(
+                                modifier = Modifier
+                                    .width(42.dp)
+                                    .height(2.5.dp)
+                                    .background(Color(0xFF288B57), RoundedCornerShape(1.5.dp))
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // 3. Two Feature Cards Side-by-Side: AR Scanner & Sustainability Solutions (Matches Mockup)
+        item {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                // Card 1: AR Scanner (Pale Mint)
+                Surface(
+                    shape = RoundedCornerShape(24.dp),
+                    color = Color(0xFFDDF3E4),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(210.dp)
+                        .clickable { onNavigateToScanner() }
+                        .testTag("ar_scanner_feature_card")
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(14.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        // AR Reticle with leaf
+                        Box(
+                            modifier = Modifier
+                                .size(50.dp)
+                                .border(2.dp, Color(0xFF135133), RoundedCornerShape(14.dp)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Eco,
+                                contentDescription = null,
+                                tint = Color(0xFF135133),
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
+
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = "AR Scanner",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF0F3B2A),
+                                textAlign = TextAlign.Center
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Scan everyday objects and see their real impact.",
+                                fontSize = 11.5.sp,
+                                color = Color(0xFF386050),
+                                textAlign = TextAlign.Center,
+                                lineHeight = 15.sp
+                            )
+                        }
+
+                        // Circular dark green action button
+                        Box(
+                            modifier = Modifier
+                                .size(38.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFF135133)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                contentDescription = "Open AR Scanner",
+                                tint = Color.White,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+                }
+
+                // Card 2: Sustainability Solutions (Pale Sky Teal)
+                Surface(
+                    shape = RoundedCornerShape(24.dp),
+                    color = Color(0xFFD7EEF2),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(210.dp)
+                        .clickable { onNavigateToSolutions() }
+                        .testTag("sustainability_solutions_feature_card")
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(14.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        // House icon with leaf container
+                        Box(
+                            modifier = Modifier.size(50.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.HomeWork,
+                                contentDescription = null,
+                                tint = Color(0xFF134C58),
+                                modifier = Modifier.size(42.dp)
+                            )
+                        }
+
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = "Sustainability\nSolutions",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF0E3842),
+                                textAlign = TextAlign.Center,
+                                lineHeight = 19.sp
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Explore tips and solutions for a greener planet.",
+                                fontSize = 11.5.sp,
+                                color = Color(0xFF3B646F),
+                                textAlign = TextAlign.Center,
+                                lineHeight = 15.sp
+                            )
+                        }
+
+                        // Circular dark teal action button
+                        Box(
+                            modifier = Modifier
+                                .size(38.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFF134C58)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                contentDescription = "Open Solutions",
+                                tint = Color.White,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // 3b. Featured Virtual Hub AR Card (Matches HTML Virtual Hub entry)
+        item {
+            Surface(
+                shape = RoundedCornerShape(24.dp),
+                color = Color(0xFFF1F8EE),
+                border = BorderStroke(1.dp, Color(0xFFCBE8C5)),
+                shadowElevation = 3.dp,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 6.dp)
+                    .clickable { onNavigateToVirtualHub() }
+                    .testTag("virtual_hub_feature_card")
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(54.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(Color(0xFFE0F2D8)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(text = "🏡", fontSize = 28.sp)
+                    }
+
+                    Spacer(modifier = Modifier.width(14.dp))
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "Virtual Hub",
+                                fontSize = 16.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF0F3B2A)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Surface(
+                                shape = CircleShape,
+                                color = EcoGreenPrimary
+                            ) {
+                                Text(
+                                    text = "AR SPACE",
+                                    color = Color.White,
+                                    fontSize = 9.5.sp,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(3.dp))
+                        Text(
+                            text = "Place solar panels, compost bins and plants in your space.",
+                            fontSize = 12.sp,
+                            color = Color(0xFF386050),
+                            lineHeight = 16.sp
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Box(
+                        modifier = Modifier
+                            .size(38.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFF135133)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                            contentDescription = "Open Virtual Hub",
+                            tint = Color.White,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+            }
+        }
+
+        // 4. Horizontal Card: Today's Eco Tip (Matches Mockup)
+        item {
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                color = Color(0xFFEFF7F0),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 6.dp)
+                    .clickable { onNavigateToTips() }
+                    .testTag("today_eco_tip_banner")
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Circular glowing lightbulb container
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFFDDF4E3)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Lightbulb,
+                            contentDescription = null,
+                            tint = Color(0xFF238350),
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Today's Eco Tip",
+                            fontSize = 13.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF1B6B44)
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = dailyTip?.title ?: "Use a reusable water bottle and reduce single-use plastic.",
+                            fontSize = 11.5.sp,
+                            color = Color(0xFF385E4D),
+                            lineHeight = 15.sp
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    // Decorative fresh leaves illustration
+                    Image(
+                        painter = painterResource(id = R.drawable.img_eco_leaves_tip_1791177554294),
+                        contentDescription = null,
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier.size(46.dp)
+                    )
+
+                    Spacer(modifier = Modifier.width(4.dp))
+
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = "View tips",
+                        tint = Color(0xFF1B6B44),
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+            }
+        }
+
+        // 5. Eco Journey Impact Overview & 3-Metric Row
         item {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 10.dp)
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
             ) {
                 // Greeting & Eco Date Status
                 Row(
@@ -182,22 +588,20 @@ fun DashboardScreen(
                     Column {
                         Text(
                             text = "Hello, ${userProfile.userName} 👋",
-                            fontSize = 22.sp,
+                            fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onBackground
                         )
                         Text(
                             text = "Your daily eco-footprint dashboard",
-                            fontSize = 13.sp,
+                            fontSize = 12.5.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
 
                     Surface(
                         shape = RoundedCornerShape(20.dp),
-                        color = MaterialTheme.colorScheme.surface,
-                        border = BorderStroke(1.dp, EcoMintBorder),
-                        shadowElevation = 2.dp,
+                        color = Color(0xFFE2F3E7),
                         modifier = Modifier.testTag("eco_hero_badge")
                     ) {
                         Row(
@@ -216,17 +620,25 @@ fun DashboardScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 // Unified 3-Metric Impact Row
                 Surface(
-                    shape = RoundedCornerShape(18.dp),
-                    color = MaterialTheme.colorScheme.surface,
-                    border = BorderStroke(1.dp, EcoMintBorder),
-                    shadowElevation = 2.dp,
+                    shape = RoundedCornerShape(20.dp),
+                    color = Color(0xF2FFFFFF),
+                    border = BorderStroke(
+                        1.dp,
+                        Brush.verticalGradient(
+                            listOf(
+                                Color.White.copy(alpha = 0.95f),
+                                SoftPaleGreen.copy(alpha = 0.5f)
+                            )
+                        )
+                    ),
+                    shadowElevation = 3.dp,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Column(modifier = Modifier.padding(vertical = 14.dp, horizontal = 12.dp)) {
+                    Column(modifier = Modifier.padding(vertical = 12.dp, horizontal = 12.dp)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceEvenly,
@@ -268,109 +680,34 @@ fun DashboardScreen(
             }
         }
 
-        // 3. Action Center: Hero Scanner Banner & Quick Log Buttons
+        // 6. Action Center: Quick Log & Simulate Buttons
         item {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 4.dp)
+                    .padding(horizontal = 16.dp, vertical = 4.dp)
             ) {
-                // Hero Banner
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onNavigateToScanner() }
-                        .testTag("hero_scan_card"),
-                    shape = RoundedCornerShape(20.dp),
-                    color = MaterialTheme.colorScheme.surface,
-                    border = BorderStroke(1.5.dp, EcoMintBorder),
-                    shadowElevation = 3.dp
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(
-                                Brush.horizontalGradient(
-                                    colors = listOf(
-                                        EcoGreenPrimaryDark,
-                                        EcoGreenPrimary
-                                    )
-                                )
-                            )
-                            .padding(16.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(46.dp)
-                                        .clip(CircleShape)
-                                        .background(AccentLime),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Filled.QrCodeScanner,
-                                        contentDescription = null,
-                                        tint = EcoGreenPrimaryDark,
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                }
-                                Spacer(modifier = Modifier.width(12.dp))
-                                Column {
-                                    Text(
-                                        text = "AR Waste Scanner",
-                                        fontSize = 16.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = LightCreamGreen
-                                    )
-                                    Text(
-                                        text = "Identify materials & 4R sorting rules",
-                                        fontSize = 12.sp,
-                                        color = EcoMintContainerLow
-                                    )
-                                }
-                            }
-
-                            Button(
-                                onClick = onNavigateToScanner,
-                                colors = ButtonDefaults.buttonColors(containerColor = AccentLime),
-                                shape = RoundedCornerShape(12.dp),
-                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
-                            ) {
-                                Text(
-                                    text = "Scan",
-                                    color = EcoGreenPrimaryDark,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 13.sp
-                                )
-                            }
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                // Quick Action Bar
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Surface(
                         onClick = { showQuickActionDialog = true },
-                        shape = RoundedCornerShape(14.dp),
-                        color = MaterialTheme.colorScheme.surface,
-                        border = BorderStroke(1.dp, EcoGreenPrimary.copy(alpha = 0.5f)),
-                        shadowElevation = 2.dp,
+                        shape = RoundedCornerShape(16.dp),
+                        color = Color(0xF2FFFFFF),
+                        border = BorderStroke(
+                            1.dp,
+                            Brush.verticalGradient(
+                                listOf(
+                                    Color.White.copy(alpha = 0.95f),
+                                    EcoGreenPrimary.copy(alpha = 0.45f)
+                                )
+                            )
+                        ),
+                        shadowElevation = 3.dp,
                         modifier = Modifier
                             .weight(1f)
-                            .height(46.dp)
+                            .height(48.dp)
                             .testTag("log_quick_action_button")
                     ) {
                         Row(
@@ -396,13 +733,21 @@ fun DashboardScreen(
 
                     Surface(
                         onClick = onQuickScanItem,
-                        shape = RoundedCornerShape(14.dp),
-                        color = EcoMintContainerLow.copy(alpha = 0.5f),
-                        border = BorderStroke(1.dp, EcoMintBorder),
-                        shadowElevation = 1.dp,
+                        shape = RoundedCornerShape(16.dp),
+                        color = Color(0xD9FFFFFF),
+                        border = BorderStroke(
+                            1.dp,
+                            Brush.verticalGradient(
+                                listOf(
+                                    Color.White.copy(alpha = 0.95f),
+                                    SoftPaleGreen.copy(alpha = 0.5f)
+                                )
+                            )
+                        ),
+                        shadowElevation = 3.dp,
                         modifier = Modifier
                             .weight(1f)
-                            .height(46.dp)
+                            .height(48.dp)
                             .testTag("simulate_scan_button")
                     ) {
                         Row(
@@ -444,7 +789,7 @@ fun DashboardScreen(
             }
         }
 
-        // 5. Weekly Eco Activity Breakdown
+        // 5. Weekly Eco Activity Breakdown with Frosted Glass Styling
         item {
             Column(
                 modifier = Modifier
@@ -452,13 +797,21 @@ fun DashboardScreen(
                     .padding(horizontal = 20.dp, vertical = 6.dp)
             ) {
                 Surface(
-                    shape = RoundedCornerShape(18.dp),
-                    color = MaterialTheme.colorScheme.surface,
-                    border = BorderStroke(1.dp, EcoMintBorder),
-                    shadowElevation = 2.dp,
+                    shape = RoundedCornerShape(20.dp),
+                    color = Color(0xF2FFFFFF),
+                    border = BorderStroke(
+                        1.dp,
+                        Brush.verticalGradient(
+                            listOf(
+                                Color.White.copy(alpha = 0.95f),
+                                SoftPaleGreen.copy(alpha = 0.5f)
+                            )
+                        )
+                    ),
+                    shadowElevation = 4.dp,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Column(modifier = Modifier.padding(15.dp)) {
+                    Column(modifier = Modifier.padding(16.dp)) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -468,12 +821,12 @@ fun DashboardScreen(
                                 text = "Weekly Eco Activity",
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
+                                color = DarkText
                             )
                             Text(
                                 text = "Consistent habit progress",
                                 fontSize = 11.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = DarkText.copy(alpha = 0.65f)
                             )
                         }
 
@@ -496,8 +849,8 @@ fun DashboardScreen(
                                             .width(22.dp)
                                             .clip(RoundedCornerShape(6.dp))
                                             .background(
-                                                if (day.isToday) EcoGreenPrimary
-                                                else EcoMintContainerLow
+                                                if (day.isToday) Brush.verticalGradient(listOf(AccentLime, EcoGreenPrimary))
+                                                else Brush.verticalGradient(listOf(EcoMintContainerLow, SoftPaleGreen.copy(alpha = 0.5f)))
                                             )
                                     )
                                     Spacer(modifier = Modifier.height(6.dp))
@@ -515,7 +868,7 @@ fun DashboardScreen(
             }
         }
 
-        // 6. Milestone Badges Showcase
+        // 6. Milestone Badges Showcase with Frosted Glass Styling
         item {
             Column(
                 modifier = Modifier
@@ -549,9 +902,17 @@ fun DashboardScreen(
                     items(badges) { badge ->
                         Surface(
                             shape = RoundedCornerShape(16.dp),
-                            color = if (badge.isUnlocked) MaterialTheme.colorScheme.surface else EcoMintContainerLow.copy(alpha = 0.4f),
-                            border = BorderStroke(1.dp, EcoMintBorder),
-                            shadowElevation = if (badge.isUnlocked) 2.dp else 0.dp,
+                            color = if (badge.isUnlocked) Color(0xF2FFFFFF) else Color(0xB3FFFFFF),
+                            border = BorderStroke(
+                                1.dp,
+                                Brush.verticalGradient(
+                                    listOf(
+                                        Color.White.copy(alpha = 0.95f),
+                                        if (badge.isUnlocked) EcoGreenPrimary.copy(alpha = 0.4f) else SoftPaleGreen.copy(alpha = 0.35f)
+                                    )
+                                )
+                            ),
+                            shadowElevation = if (badge.isUnlocked) 3.dp else 1.dp,
                             modifier = Modifier
                                 .width(120.dp)
                                 .testTag("badge_${badge.id}")
@@ -565,8 +926,8 @@ fun DashboardScreen(
                                         .size(38.dp)
                                         .clip(CircleShape)
                                         .background(
-                                            if (badge.isUnlocked) EcoMintContainer
-                                            else EcoMintContainerLow.copy(alpha = 0.6f)
+                                            if (badge.isUnlocked) Color(0xE6EDF7ED)
+                                            else Color(0x66D6EED6)
                                         ),
                                     contentAlignment = Alignment.Center
                                 ) {
@@ -588,7 +949,7 @@ fun DashboardScreen(
                                     text = badge.title,
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface,
+                                    color = DarkText,
                                     maxLines = 1
                                 )
                                 Text(
@@ -645,10 +1006,10 @@ fun DashboardScreen(
                 ) {
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(18.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                        border = BorderStroke(1.dp, EcoMintBorder),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                        shape = RoundedCornerShape(20.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xF2FFFFFF)),
+                        border = BorderStroke(1.dp, Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.95f), SoftPaleGreen.copy(alpha = 0.5f)))),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                     ) {
                         Row(
                             modifier = Modifier
@@ -782,9 +1143,17 @@ fun DashboardScreen(
 
                 if (recentScans.isEmpty()) {
                     Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = MaterialTheme.colorScheme.surface,
-                        border = BorderStroke(1.dp, EcoMintBorder),
+                        shape = RoundedCornerShape(18.dp),
+                        color = Color(0xF2FFFFFF),
+                        border = BorderStroke(
+                            1.dp,
+                            Brush.verticalGradient(
+                                listOf(
+                                    Color.White.copy(alpha = 0.95f),
+                                    SoftPaleGreen.copy(alpha = 0.5f)
+                                )
+                            )
+                        ),
                         shadowElevation = 2.dp,
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -826,12 +1195,12 @@ fun DashboardScreen(
         }
     }
 
-    // Quick Action Dialog
+    // Quick Action Dialog with Frosted Glass Styling
     if (showQuickActionDialog) {
         AlertDialog(
             onDismissRequest = { showQuickActionDialog = false },
-            shape = RoundedCornerShape(20.dp),
-            containerColor = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(24.dp),
+            containerColor = Color(0xF7FFFFFF),
             title = {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -842,7 +1211,7 @@ fun DashboardScreen(
                         text = "⚡ Log Quick Eco Action",
                         fontSize = 17.sp,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = DarkText
                     )
                     IconButton(
                         onClick = { showQuickActionDialog = false },
@@ -851,7 +1220,7 @@ fun DashboardScreen(
                         Icon(
                             imageVector = Icons.Filled.Close,
                             contentDescription = "Close",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            tint = DarkText.copy(alpha = 0.7f)
                         )
                     }
                 }
@@ -864,7 +1233,7 @@ fun DashboardScreen(
                     Text(
                         text = "Tap any action you completed today to boost your score & impact:",
                         fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = DarkText.copy(alpha = 0.75f)
                     )
 
                     quickActions.forEach { action ->
@@ -873,9 +1242,18 @@ fun DashboardScreen(
                                 onLogQuickAction(action)
                                 showQuickActionDialog = false
                             },
-                            shape = RoundedCornerShape(12.dp),
-                            color = EcoMintContainerLow.copy(alpha = 0.45f),
-                            border = BorderStroke(1.dp, EcoMintBorder),
+                            shape = RoundedCornerShape(14.dp),
+                            color = Color(0xE6FFFFFF),
+                            border = BorderStroke(
+                                1.dp,
+                                Brush.verticalGradient(
+                                    listOf(
+                                        Color.White.copy(alpha = 0.9f),
+                                        SoftPaleGreen.copy(alpha = 0.5f)
+                                    )
+                                )
+                            ),
+                            shadowElevation = 1.dp,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .testTag("quick_action_${action.id}")
@@ -891,25 +1269,25 @@ fun DashboardScreen(
                                         text = action.title,
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.SemiBold,
-                                        color = MaterialTheme.colorScheme.onSurface
+                                        color = DarkText
                                     )
                                     Text(
                                         text = action.description,
                                         fontSize = 11.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        color = DarkText.copy(alpha = 0.65f)
                                     )
                                 }
                                 Surface(
-                                    shape = RoundedCornerShape(6.dp),
+                                    shape = RoundedCornerShape(8.dp),
                                     color = EcoMintContainer,
-                                    border = BorderStroke(1.dp, EcoMintBorder)
+                                    border = BorderStroke(1.dp, SoftPaleGreen)
                                 ) {
                                     Text(
                                         text = "Action",
                                         fontSize = 10.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = EcoGreenPrimary,
-                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                                     )
                                 }
                             }
@@ -975,10 +1353,18 @@ private fun CleanClimateQuizCard(
         modifier = modifier
             .fillMaxWidth()
             .testTag("climate_quiz_card"),
-        shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, EcoMintBorder),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xF2FFFFFF)),
+        border = BorderStroke(
+            1.dp,
+            Brush.verticalGradient(
+                listOf(
+                    Color.White.copy(alpha = 0.95f),
+                    SoftPaleGreen.copy(alpha = 0.5f)
+                )
+            )
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(modifier = Modifier.padding(15.dp)) {
             // Header Row
@@ -1015,7 +1401,7 @@ private fun CleanClimateQuizCard(
                             text = q.category,
                             fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = DarkText
                         )
                     }
                 }
@@ -1042,13 +1428,13 @@ private fun CleanClimateQuizCard(
                 text = q.question,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurface,
+                color = DarkText,
                 lineHeight = 18.sp
             )
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Options List
+            // Options List with Frosted Glass Styling
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 q.options.forEachIndexed { index, option ->
                     val isSelected = quizState.selectedOptionIndex == index
@@ -1056,24 +1442,24 @@ private fun CleanClimateQuizCard(
                     val isIncorrectChoice = isSubmitted && isSelected && !isCorrectAnswer
 
                     val cardBackground = when {
-                        isCorrectAnswer -> EcoMintContainer
+                        isCorrectAnswer -> Color(0xE6EDF7ED)
                         isIncorrectChoice -> EcoCoralAlert.copy(alpha = 0.15f)
-                        isSelected -> EcoMintContainer
-                        else -> EcoMintContainerLow.copy(alpha = 0.45f)
+                        isSelected -> Color(0xE6EDF7ED)
+                        else -> Color(0xD9FFFFFF)
                     }
 
                     val borderColor = when {
                         isCorrectAnswer -> EcoGreenPrimary
                         isIncorrectChoice -> EcoCoralAlert
                         isSelected -> EcoGreenPrimary
-                        else -> EcoMintBorder
+                        else -> SoftPaleGreen.copy(alpha = 0.8f)
                     }
 
                     val textColor = when {
                         isCorrectAnswer -> EcoGreenPrimaryDark
                         isIncorrectChoice -> EcoCoralAlert
                         isSelected -> EcoGreenPrimaryDark
-                        else -> MaterialTheme.colorScheme.onSurface
+                        else -> DarkText
                     }
 
                     Surface(
@@ -1174,10 +1560,10 @@ private fun CleanDailyFactCard(
         modifier = modifier
             .fillMaxWidth()
             .testTag("daily_sustainability_fact_card"),
-        shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, EcoMintBorder),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xF2FFFFFF)),
+        border = BorderStroke(1.dp, Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.95f), SoftPaleGreen.copy(alpha = 0.5f)))),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(modifier = Modifier.padding(15.dp)) {
             Row(
@@ -1298,11 +1684,19 @@ private fun CleanFeatureTile(
 ) {
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, EcoMintBorder),
-        shadowElevation = 2.dp,
-        modifier = modifier.height(90.dp)
+        shape = RoundedCornerShape(18.dp),
+        color = Color(0xF2FFFFFF),
+        border = BorderStroke(
+            1.dp,
+            Brush.verticalGradient(
+                listOf(
+                    Color.White.copy(alpha = 0.95f),
+                    SoftPaleGreen.copy(alpha = 0.5f)
+                )
+            )
+        ),
+        shadowElevation = 3.dp,
+        modifier = modifier.height(92.dp)
     ) {
         Column(
             modifier = Modifier
@@ -1312,9 +1706,10 @@ private fun CleanFeatureTile(
         ) {
             Box(
                 modifier = Modifier
-                    .size(32.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(EcoMintContainer),
+                    .size(34.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(Color(0xE6EDF7ED))
+                    .border(1.dp, SoftPaleGreen.copy(alpha = 0.8f), RoundedCornerShape(10.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -1330,13 +1725,13 @@ private fun CleanFeatureTile(
                     text = title,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color = DarkText,
                     maxLines = 1
                 )
                 Text(
                     text = subtitle,
                     fontSize = 11.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = DarkText.copy(alpha = 0.65f),
                     maxLines = 1
                 )
             }
@@ -1352,10 +1747,18 @@ private fun CleanScanRow(
     val dateStr = SimpleDateFormat("MMM d, h:mm a", Locale.getDefault()).format(Date(scan.timestamp))
 
     Surface(
-        shape = RoundedCornerShape(14.dp),
-        color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, EcoMintBorder),
-        shadowElevation = 2.dp,
+        shape = RoundedCornerShape(16.dp),
+        color = Color(0xF2FFFFFF),
+        border = BorderStroke(
+            1.dp,
+            Brush.verticalGradient(
+                listOf(
+                    Color.White.copy(alpha = 0.95f),
+                    SoftPaleGreen.copy(alpha = 0.5f)
+                )
+            )
+        ),
+        shadowElevation = 3.dp,
         modifier = modifier.fillMaxWidth()
     ) {
         Row(
@@ -1373,7 +1776,8 @@ private fun CleanScanRow(
                     modifier = Modifier
                         .size(34.dp)
                         .clip(CircleShape)
-                        .background(EcoMintContainer),
+                        .background(Color(0xE6EDF7ED))
+                        .border(1.dp, SoftPaleGreen.copy(alpha = 0.8f), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -1391,21 +1795,21 @@ private fun CleanScanRow(
                         text = scan.itemName,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface,
+                        color = DarkText,
                         maxLines = 1
                     )
                     Text(
                         text = "${scan.category} • $dateStr",
                         fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = DarkText.copy(alpha = 0.65f)
                     )
                 }
             }
 
             Surface(
                 shape = RoundedCornerShape(8.dp),
-                color = EcoMintContainer,
-                border = BorderStroke(1.dp, EcoMintBorder)
+                color = Color(0xE6EDF7ED),
+                border = BorderStroke(1.dp, SoftPaleGreen.copy(alpha = 0.8f))
             ) {
                 Text(
                     text = scan.actionType,

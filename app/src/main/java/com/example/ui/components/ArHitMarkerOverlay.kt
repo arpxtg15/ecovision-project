@@ -159,11 +159,11 @@ fun ArHitMarkerOverlay(
         // 2. Focused Precision Telemetry Hologram Card with Object Intelligence
         AnimatedVisibility(
             visible = activeMarker != null,
-            enter = fadeIn() + slideInVertically(initialOffsetY = { it / 2 }),
+            enter = fadeIn() + slideInVertically(initialOffsetY = { -it / 2 }),
             exit = fadeOut(),
             modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(horizontal = 12.dp, vertical = 48.dp)
+                .align(Alignment.TopCenter)
+                .padding(horizontal = 12.dp, vertical = 52.dp)
         ) {
             if (activeMarker != null) {
                 val classificationBadge = when (activeMarker.threeRClassification.uppercase()) {
@@ -182,18 +182,27 @@ fun ArHitMarkerOverlay(
                 }
 
                 Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = DeepForestGreen.copy(alpha = 0.96f),
-                    border = BorderStroke(1.5.dp, badgeColor),
+                    shape = RoundedCornerShape(18.dp),
+                    color = Color(0xE60D2818),
+                    border = BorderStroke(
+                        1.2.dp,
+                        Brush.verticalGradient(
+                            listOf(
+                                Color.White.copy(alpha = 0.8f),
+                                badgeColor,
+                                Color.White.copy(alpha = 0.2f)
+                            )
+                        )
+                    ),
                     shadowElevation = 10.dp,
                     modifier = Modifier
                         .clickable { onMarkerClick(activeMarker) }
                         .testTag("ar_focused_marker_card")
                 ) {
                     Column(
-                        modifier = Modifier.padding(12.dp)
+                        modifier = Modifier.padding(10.dp)
                     ) {
-                        // Top Header: Name, Badge, Precision Match, Close
+                        // Top Header: Name, Badge, Inspect Action, Close
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -205,7 +214,7 @@ fun ArHitMarkerOverlay(
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(32.dp)
+                                        .size(28.dp)
                                         .clip(CircleShape)
                                         .background(badgeColor.copy(alpha = 0.2f)),
                                     contentAlignment = Alignment.Center
@@ -214,7 +223,7 @@ fun ArHitMarkerOverlay(
                                         imageVector = Icons.Filled.Place,
                                         contentDescription = null,
                                         tint = badgeColor,
-                                        modifier = Modifier.size(18.dp)
+                                        modifier = Modifier.size(16.dp)
                                     )
                                 }
                                 Spacer(modifier = Modifier.width(8.dp))
@@ -224,7 +233,8 @@ fun ArHitMarkerOverlay(
                                             text = activeMarker.label,
                                             color = LightCreamGreen,
                                             fontWeight = FontWeight.Bold,
-                                            fontSize = 13.sp
+                                            fontSize = 12.sp,
+                                            maxLines = 1
                                         )
                                         Spacer(modifier = Modifier.width(6.dp))
                                         Surface(
@@ -242,36 +252,35 @@ fun ArHitMarkerOverlay(
                                         }
                                     }
                                     Text(
-                                        text = "${activeMarker.resinCode} • ${(activeMarker.confidence * 1000).roundToInt() / 10f}% match",
+                                        text = "${activeMarker.resinCode} • ${(activeMarker.confidence * 100).roundToInt()}% match",
                                         color = SoftPaleGreen,
-                                        fontSize = 10.sp,
-                                        fontWeight = FontWeight.Medium
+                                        fontSize = 10.sp
                                     )
                                 }
                             }
 
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                // Scan action button
+                                // Inspect / Scan button
                                 Surface(
                                     shape = RoundedCornerShape(8.dp),
                                     color = badgeColor,
                                     modifier = Modifier
                                         .clickable { onScanMarkerItem(activeMarker) }
                                         .testTag("ar_scan_marker_action")
-                                 ) {
+                                ) {
                                     Row(
-                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Icon(
                                             imageVector = Icons.Filled.AutoAwesome,
-                                            contentDescription = "Inspect Item",
+                                            contentDescription = "Inspect",
                                             tint = DeepForestGreen,
-                                            modifier = Modifier.size(13.dp)
+                                            modifier = Modifier.size(12.dp)
                                         )
                                         Spacer(modifier = Modifier.width(4.dp))
                                         Text(
-                                            text = "Inspect Item",
+                                            text = "Inspect",
                                             color = DeepForestGreen,
                                             fontSize = 11.sp,
                                             fontWeight = FontWeight.Bold
@@ -295,93 +304,17 @@ fun ArHitMarkerOverlay(
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        // Key Insights Row
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = Color(0xFF06150D),
-                            border = BorderStroke(0.5.dp, SoftPaleGreen.copy(alpha = 0.3f)),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Column(modifier = Modifier.padding(8.dp)) {
-                                Row(verticalAlignment = Alignment.Top) {
-                                    Text(
-                                        text = "💡 Eco Tip: ",
-                                        color = Color(0xFF80D8FF),
-                                        fontSize = 10.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                    Text(
-                                        text = activeMarker.reuseTip.ifBlank { activeMarker.reduceTip },
-                                        color = LightCreamGreen,
-                                        fontSize = 10.sp,
-                                        lineHeight = 13.sp,
-                                        maxLines = 1
-                                    )
-                                }
-                                Spacer(modifier = Modifier.height(2.dp))
-                                Row(verticalAlignment = Alignment.Top) {
-                                    Text(
-                                        text = "♻️ Disposal: ",
-                                        color = AccentLime,
-                                        fontSize = 10.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                    Text(
-                                        text = activeMarker.recycleTip,
-                                        color = LightCreamGreen,
-                                        fontSize = 10.sp,
-                                        lineHeight = 13.sp,
-                                        maxLines = 1
-                                    )
-                                }
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(6.dp))
-
-                        // Sub-millimeter Telemetry Stats Row
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = Color(0xFF091F13),
-                            border = BorderStroke(0.5.dp, SoftPaleGreen.copy(alpha = 0.3f)),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 8.dp, vertical = 4.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(
-                                        imageVector = Icons.Filled.Straighten,
-                                        contentDescription = null,
-                                        tint = AccentLime,
-                                        modifier = Modifier.size(12.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text(
-                                        text = activeMarker.estimatedDimensionsMm,
-                                        color = LightCreamGreen,
-                                        fontSize = 10.sp,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                                }
-                                Text(
-                                    text = "ρ = ${activeMarker.densityGcm3} g/cm³",
-                                    color = SoftPaleGreen,
-                                    fontSize = 10.sp
-                                )
-                                Text(
-                                    text = "Dist: ${(activeMarker.distanceMeters * 100).roundToInt()} cm",
-                                    color = AccentLime,
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                            }
+                        // Subtle Single-line Tip
+                        val tip = activeMarker.recycleTip.ifBlank { activeMarker.reuseTip.ifBlank { activeMarker.reduceTip } }
+                        if (tip.isNotBlank()) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "💡 $tip",
+                                color = LightCreamGreen.copy(alpha = 0.9f),
+                                fontSize = 10.sp,
+                                maxLines = 1,
+                                lineHeight = 13.sp
+                            )
                         }
                     }
                 }

@@ -3,6 +3,7 @@ package com.example.ui.screens
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -51,6 +52,9 @@ import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.data.model.TeamData
 import com.example.data.model.TeamMember
+import com.example.ui.theme.AccentLime
+import com.example.ui.theme.NatureGreen
+import com.example.ui.theme.DarkText
 import com.example.ui.theme.EcoGreenPrimary
 import com.example.ui.theme.EcoGreenPrimaryDark
 import com.example.ui.theme.EcoGreenSecondary
@@ -59,6 +63,7 @@ import com.example.ui.theme.EcoMintBorder
 import com.example.ui.theme.EcoMintContainer
 import com.example.ui.theme.EcoMintContainerLow
 import com.example.ui.theme.LightCreamGreen
+import com.example.ui.theme.SoftPaleGreen
 import com.example.ui.theme.EcoTealAccent
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -111,7 +116,7 @@ fun AboutTeamScreen(
                 }
             },
             colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = MaterialTheme.colorScheme.surface
+                containerColor = Color(0xF2F7FCF6)
             )
         )
 
@@ -119,7 +124,7 @@ fun AboutTeamScreen(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(bottom = 60.dp)
         ) {
-            // Project Header Banner
+            // Project Header Banner with Frosted Glass Border
             item {
                 Card(
                     modifier = Modifier
@@ -127,7 +132,17 @@ fun AboutTeamScreen(
                         .padding(16.dp),
                     shape = RoundedCornerShape(24.dp),
                     colors = CardDefaults.cardColors(containerColor = EcoGreenPrimary),
-                    border = BorderStroke(1.dp, EcoMintBorder)
+                    border = BorderStroke(
+                        1.5.dp,
+                        Brush.verticalGradient(
+                            listOf(
+                                Color.White.copy(alpha = 0.95f),
+                                AccentLime.copy(alpha = 0.6f),
+                                NatureGreen.copy(alpha = 0.4f)
+                            )
+                        )
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
                 ) {
                     Box(
                         modifier = Modifier
@@ -272,20 +287,29 @@ fun AboutTeamScreen(
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 12.dp)
                 ) {
-                    // Vision Card
+                    // Vision Card with Frosted Glass Styling
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(20.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                        border = BorderStroke(1.dp, EcoMintBorder.copy(alpha = 0.8f))
+                        colors = CardDefaults.cardColors(containerColor = Color(0xF2FFFFFF)),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
+                        border = BorderStroke(
+                            1.dp,
+                            Brush.verticalGradient(
+                                listOf(
+                                    Color.White.copy(alpha = 0.95f),
+                                    SoftPaleGreen.copy(alpha = 0.5f)
+                                )
+                            )
+                        )
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Box(
                                     modifier = Modifier
                                         .size(36.dp)
-                                        .background(EcoMintContainer, RoundedCornerShape(10.dp)),
+                                        .background(Color(0xE6EDF7ED), RoundedCornerShape(10.dp))
+                                        .border(1.dp, SoftPaleGreen.copy(alpha = 0.8f), RoundedCornerShape(10.dp)),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
@@ -300,14 +324,14 @@ fun AboutTeamScreen(
                                     text = "Our Vision",
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
+                                    color = DarkText
                                 )
                             }
                             Spacer(modifier = Modifier.height(10.dp))
                             Text(
                                 text = "“To reimagine the way people engage with sustainability—by making eco-conscious living not just a choice, but a vivid, immersive experience. We aim to bridge the gap between awareness and action through the power of Augmented Reality, inspiring individuals and communities to visualize a greener future, right from their own homes.”",
                                 fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                color = DarkText.copy(alpha = 0.7f),
                                 lineHeight = 18.sp
                             )
                         }
@@ -315,20 +339,29 @@ fun AboutTeamScreen(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // Mission Card
+                    // Mission Card with Frosted Glass Styling
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(20.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                        border = BorderStroke(1.dp, EcoMintBorder.copy(alpha = 0.8f))
+                        colors = CardDefaults.cardColors(containerColor = Color(0xF2FFFFFF)),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
+                        border = BorderStroke(
+                            1.dp,
+                            Brush.verticalGradient(
+                                listOf(
+                                    Color.White.copy(alpha = 0.95f),
+                                    SoftPaleGreen.copy(alpha = 0.5f)
+                                )
+                            )
+                        )
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Box(
                                     modifier = Modifier
                                         .size(36.dp)
-                                        .background(EcoMintContainer, RoundedCornerShape(10.dp)),
+                                        .background(Color(0xE6EDF7ED), RoundedCornerShape(10.dp))
+                                        .border(1.dp, SoftPaleGreen.copy(alpha = 0.8f), RoundedCornerShape(10.dp)),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
@@ -343,14 +376,14 @@ fun AboutTeamScreen(
                                     text = "Our Mission",
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
+                                    color = DarkText
                                 )
                             }
                             Spacer(modifier = Modifier.height(10.dp))
                             Text(
                                 text = "At EcoVision, we aim to make sustainable living easy to understand and enjoyable. Using Augmented Reality (AR), our app lets people explore how they can help the environment in simple ways. By scanning everyday items or spaces around them, users can see helpful tips and visualize eco-friendly changes—like adding a compost bin or installing solar panels. It’s all about making small, smart choices for the planet—one scan at a time.",
                                 fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                color = DarkText.copy(alpha = 0.7f),
                                 lineHeight = 18.sp
                             )
                         }
@@ -387,15 +420,24 @@ fun AboutTeamScreen(
                 )
             }
 
-            // School & Contact Footer
+            // School & Contact Footer with Frosted Glass Styling
             item {
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp),
                     shape = RoundedCornerShape(20.dp),
-                    color = EcoMintContainer,
-                    border = BorderStroke(1.dp, EcoMintBorder)
+                    color = Color(0xF2FFFFFF),
+                    border = BorderStroke(
+                        1.dp,
+                        Brush.verticalGradient(
+                            listOf(
+                                Color.White.copy(alpha = 0.95f),
+                                SoftPaleGreen.copy(alpha = 0.5f)
+                            )
+                        )
+                    ),
+                    shadowElevation = 3.dp
                 ) {
                     Column(
                         modifier = Modifier.padding(18.dp),
@@ -426,7 +468,7 @@ fun AboutTeamScreen(
                         Text(
                             text = "Innovations in Augmented Reality & Sustainability Science",
                             fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = DarkText.copy(alpha = 0.65f),
                             textAlign = TextAlign.Center
                         )
                     }
@@ -445,10 +487,18 @@ private fun IpoStageCard(
 ) {
     Card(
         modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        border = BorderStroke(1.dp, EcoMintBorder.copy(alpha = 0.8f))
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xF2FFFFFF)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
+        border = BorderStroke(
+            1.dp,
+            Brush.verticalGradient(
+                listOf(
+                    Color.White.copy(alpha = 0.95f),
+                    SoftPaleGreen.copy(alpha = 0.5f)
+                )
+            )
+        )
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Surface(
@@ -470,7 +520,7 @@ private fun IpoStageCard(
                 Text(
                     text = "• $b",
                     fontSize = 9.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = DarkText.copy(alpha = 0.75f),
                     lineHeight = 13.sp,
                     modifier = Modifier.padding(bottom = 4.dp)
                 )
@@ -487,16 +537,24 @@ private fun TeamMemberCard(
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        border = BorderStroke(1.dp, EcoMintBorder.copy(alpha = 0.8f))
+        colors = CardDefaults.cardColors(containerColor = Color(0xF2FFFFFF)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
+        border = BorderStroke(
+            1.dp,
+            Brush.verticalGradient(
+                listOf(
+                    Color.White.copy(alpha = 0.95f),
+                    SoftPaleGreen.copy(alpha = 0.5f)
+                )
+            )
+        )
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Surface(
                     shape = CircleShape,
-                    color = EcoMintContainer,
-                    border = BorderStroke(1.dp, EcoMintBorder),
+                    color = Color(0xE6EDF7ED),
+                    border = BorderStroke(1.dp, SoftPaleGreen.copy(alpha = 0.8f)),
                     modifier = Modifier.size(48.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
@@ -514,7 +572,7 @@ private fun TeamMemberCard(
                         text = member.name,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = DarkText
                     )
                     Text(
                         text = member.role,
@@ -530,7 +588,7 @@ private fun TeamMemberCard(
             Text(
                 text = member.bio,
                 fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = DarkText.copy(alpha = 0.7f),
                 lineHeight = 17.sp
             )
 

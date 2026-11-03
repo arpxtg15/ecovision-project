@@ -40,6 +40,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -48,6 +49,7 @@ import androidx.compose.ui.unit.sp
 import com.example.ml.teachablemachine.TeachableMachineModelInfo
 import com.example.ml.teachablemachine.TeachableMachinePresetCatalog
 import com.example.ui.theme.AccentLime
+import com.example.ui.theme.DarkText
 import com.example.ui.theme.DeepForestGreen
 import com.example.ui.theme.EcoGreenPrimary
 import com.example.ui.theme.EcoGreenPrimaryDark
@@ -55,6 +57,7 @@ import com.example.ui.theme.EcoMintBorder
 import com.example.ui.theme.EcoMintContainer
 import com.example.ui.theme.EcoMintContainerLow
 import com.example.ui.theme.LightCreamGreen
+import com.example.ui.theme.SoftPaleGreen
 
 @Composable
 fun TeachableMachineModelSelectorDialog(
@@ -69,8 +72,8 @@ fun TeachableMachineModelSelectorDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(24.dp),
-        containerColor = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(26.dp),
+        containerColor = Color(0xF9FFFFFF),
         modifier = Modifier.testTag("teachable_machine_model_dialog"),
         title = {
             Row(
@@ -79,8 +82,8 @@ fun TeachableMachineModelSelectorDialog(
             ) {
                 Surface(
                     shape = CircleShape,
-                    color = EcoMintContainer,
-                    border = BorderStroke(1.dp, EcoMintBorder),
+                    color = Color(0xE6EDF7ED),
+                    border = BorderStroke(1.dp, SoftPaleGreen.copy(alpha = 0.8f)),
                     modifier = Modifier.size(36.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
@@ -98,7 +101,7 @@ fun TeachableMachineModelSelectorDialog(
                         text = "Teachable Machine Models",
                         fontSize = 17.sp,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = DarkText
                     )
                     Text(
                         text = "TensorFlow.js Visual Inference Engine",
@@ -116,7 +119,7 @@ fun TeachableMachineModelSelectorDialog(
                     text = "Preset Classification Models:",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = DarkText.copy(alpha = 0.75f)
                 )
                 Spacer(modifier = Modifier.height(6.dp))
 
@@ -124,11 +127,12 @@ fun TeachableMachineModelSelectorDialog(
                     val isSelected = model.id == activeModel.id
                     Surface(
                         shape = RoundedCornerShape(14.dp),
-                        color = if (isSelected) EcoMintContainer else EcoMintContainerLow,
+                        color = if (isSelected) Color(0xE6EDF7ED) else Color(0xD9FFFFFF),
                         border = BorderStroke(
-                            if (isSelected) 1.5.dp else 1.dp,
-                            if (isSelected) EcoGreenPrimary else EcoMintBorder
+                            1.dp,
+                            if (isSelected) EcoGreenPrimary else SoftPaleGreen.copy(alpha = 0.8f)
                         ),
+                        shadowElevation = if (isSelected) 3.dp else 1.dp,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 4.dp)

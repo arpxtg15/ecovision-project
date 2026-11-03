@@ -26,8 +26,10 @@ import com.example.ui.navigation.EcoScreen
 import com.example.ui.screens.AboutTeamScreen
 import com.example.ui.screens.DashboardScreen
 import com.example.ui.screens.EcoTipsAndChallengesScreen
+import com.example.ui.screens.SettingsScreen
 import com.example.ui.screens.ShopScreen
 import com.example.ui.screens.SolutionsScreen
+import com.example.ui.screens.VirtualHubScreen
 import com.example.ui.screens.WasteScannerScreen
 import com.example.ui.screens.WelcomeScreen
 import com.example.ui.theme.MyApplicationTheme
@@ -58,30 +60,37 @@ fun EcoVisionApp(
     val scanHistory by viewModel.scanHistory.collectAsStateWithLifecycle()
     val scannerState by viewModel.scannerState.collectAsStateWithLifecycle()
     val solutionsState by viewModel.solutionsState.collectAsStateWithLifecycle()
+    val hubState by viewModel.hubState.collectAsStateWithLifecycle()
     val tipsState by viewModel.tipsState.collectAsStateWithLifecycle()
     val shopState by viewModel.shopState.collectAsStateWithLifecycle()
     val dailyFact by viewModel.dailyFact.collectAsStateWithLifecycle()
     val quizState by viewModel.quizState.collectAsStateWithLifecycle()
     val homeFeedback by viewModel.homeFeedback.collectAsStateWithLifecycle()
+    val tmActiveModel by viewModel.tmActiveModel.collectAsStateWithLifecycle()
+    val tmIsModelLoading by viewModel.tmIsModelLoading.collectAsStateWithLifecycle()
 
     val availableCredits = viewModel.getAvailableEcoCredits(userProfile, scanHistory.size)
 
-    val shouldShowBars = currentRoute != EcoScreen.Welcome.route && currentRoute != EcoScreen.AboutTeam.route
+    val shouldShowBars = currentRoute != EcoScreen.Welcome.route
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
-            if (shouldShowBars) {
+            if (shouldShowBars && currentRoute != EcoScreen.Scanner.route && currentRoute != EcoScreen.AboutTeam.route && currentRoute != EcoScreen.Settings.route && currentRoute != EcoScreen.VirtualHub.route) {
                 EcoTopBar(
                     title = "EcoVision",
                     onAboutClick = {
                         navController.navigate(EcoScreen.AboutTeam.route)
-                    }
+                    },
+                    onSettingsClick = {
+                        navController.navigate(EcoScreen.Settings.route)
+                    },
+                    userName = userProfile.userName
                 )
             }
         },
         bottomBar = {
-            if (shouldShowBars) {
+            if (shouldShowBars && currentRoute != EcoScreen.VirtualHub.route) {
                 EcoBottomNavigation(
                     currentRoute = currentRoute,
                     onNavigate = { route ->
@@ -144,6 +153,7 @@ fun EcoVisionApp(
                     onCycleFact = { viewModel.cycleNextDailyFact() },
                     onNavigateToScanner = { navController.navigate(EcoScreen.Scanner.route) },
                     onNavigateToSolutions = { navController.navigate(EcoScreen.Solutions.route) },
+                    onNavigateToVirtualHub = { navController.navigate(EcoScreen.VirtualHub.route) },
                     onNavigateToTips = { navController.navigate(EcoScreen.TipsAndHabits.route) },
                     onNavigateToAbout = { navController.navigate(EcoScreen.AboutTeam.route) },
                     onQuickScanItem = {
@@ -188,7 +198,9 @@ fun EcoVisionApp(
                     onTriggerScan = { bitmap, marker -> viewModel.analyzeDetectedObjectFrame(bitmap, marker) },
                     onRetryScan = { viewModel.retryLastScan() },
                     onDismissError = { viewModel.clearScanError() },
-                    onDismissDialog = { viewModel.dismissDetailDialog() }
+                    onDismissDialog = { viewModel.dismissDetailDialog() },
+                    onNavigateBack = { navController.popBackStack() },
+                    onOpenModelSelector = { navController.navigate(EcoScreen.AboutTeam.route) }
                 )
             }
 
@@ -274,6 +286,50 @@ fun EcoVisionApp(
                     onNavigateBack = {
                         navController.popBackStack()
                     }
+                )
+            }
+
+            // 8. Dedicated Settings Screen
+            composable(
+                route = EcoScreen.Settings.route,
+                enterTransition = { fadeIn(animationSpec = tween(250)) },
+                exitTransition = { fadeOut(animationSpec = tween(250)) }
+            ) {
+                SettingsScreen(
+                    userProfile = userProfile,
+                    activeModel = tmActiveModel,
+                    isModelLoading = tmIsModelLoading,
+                    onSelectModelPreset = { viewModel.selectTeachableMachinePresetModel(it) },
+                    onSetCustomModelUrl = { viewModel.setCustomTeachableMachineModelUrl(it) },
+                    onUpdateUserName = { viewModel.updateUserName(it) },
+                    onClearScanHistory = { viewModel.clearAllScans() },
+                    onResetDemoData = { viewModel.resetToDemoProfile() },
+                    onNavigateToAbout = { navController.navigate(EcoScreen.AboutTeam.route) },
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+
+            // 9. Interactive AR Virtual Hub Screen
+            composable(
+                route = EcoScreen.VirtualHub.route,
+                enterTransition = { fadeIn(animationSpec = tween(250)) },
+                exitTransition = { fadeOut(animationSpec = tween(250)) }
+            ) {
+                VirtualHubScreen(
+                    hubState = hubState,
+                    allModels = viewModel.getAllHubModels(),
+                    onAddModel = { model, x, y -> viewModel.addHubItemToStage(model, x, y) },
+                    onMoveItem = { id, dx, dy -> viewModel.updatePlacedItemOffset(id, dx, dy) },
+                    onSelectItem = { id -> viewModel.selectPlacedItem(id) },
+                    onResizeItem = { id, delta -> viewModel.resizePlacedItem(id, delta) },
+                    onRemoveItem = { id -> viewModel.removePlacedItem(id) },
+                    onClearAll = { viewModel.clearAllPlacedItems() },
+                    onSaveSnapshot = { viewModel.saveHubSnapshot() },
+                    onOpenSpecs = { model -> viewModel.openModelSpecs(model) },
+                    onDismissSpecs = { viewModel.dismissSpecsDialog() },
+                    onNavigateBack = { navController.popBackStack() }
                 )
             }
         }

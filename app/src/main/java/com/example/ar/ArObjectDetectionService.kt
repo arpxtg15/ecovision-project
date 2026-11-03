@@ -278,7 +278,6 @@ class ArObjectDetectionService private constructor() {
                     Plane.Type.HORIZONTAL_UPWARD_FACING -> "Floor / Table"
                     Plane.Type.HORIZONTAL_DOWNWARD_FACING -> "Ceiling Surface"
                     Plane.Type.VERTICAL -> "Wall / Partition"
-                    else -> "Surface Plane"
                 }
                 ArDetectedPlane(
                     id = plane.hashCode().toString(),

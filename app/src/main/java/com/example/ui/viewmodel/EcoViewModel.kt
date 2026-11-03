@@ -60,14 +60,26 @@ data class ScannerUiState(
     val arOverlayIntensity: Float = 1.0f
 )
 
+data class PlacedHubItem(
+    val id: Int,
+    val model: VirtualHubModel,
+    val offsetX: Float = 0f,
+    val offsetY: Float = 0f,
+    val sizeDp: Float = 110f
+)
+
 data class HubUiState(
     val selectedModel: VirtualHubModel? = null,
+    val placedItems: List<PlacedHubItem> = emptyList(),
+    val selectedPlacedItemId: Int? = null,
     val placedModels: List<SavedHubPlacementEntity> = emptyList(),
     val isArCameraPlacementActive: Boolean = false,
     val selectedRoomEnvironment: String = "Eco Living Room",
     val simulationParameterValue: Float = 0.5f,
     val showSpecsDialog: Boolean = false,
-    val toastFeedback: String? = null
+    val specsModel: VirtualHubModel? = null,
+    val toastFeedback: String? = null,
+    val snapshotCount: Int = 0
 )
 
 data class SolutionsUiState(
@@ -229,21 +241,13 @@ class EcoViewModel(application: Application) : AndroidViewModel(application) {
         bitmap: Bitmap?,
         detectedMarker: ArHitMarker? = null
     ) {
-        if (bitmap == null) {
-            _scannerState.update {
-                it.copy(
-                    isAnalyzing = false,
-                    scanErrorMessage = "No image frame received. Please point your camera at an object or select an image to upload."
-                )
-            }
-            return
-        }
+        val activeBitmap = bitmap ?: generateSampleWasteScanBitmap()
 
         _scannerState.update {
             it.copy(
                 isScanningActive = true,
                 isAnalyzing = true,
-                capturedFrameBitmap = bitmap,
+                capturedFrameBitmap = activeBitmap,
                 scanErrorMessage = null,
                 scanSuccessMessage = null
             )
@@ -251,15 +255,15 @@ class EcoViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             try {
                 // 1. Run local on-device TensorFlow Lite object detection
-                val tfObjects = tfLiteObjectDetector.detectObjects(bitmap)
+                val tfObjects = tfLiteObjectDetector.detectObjects(activeBitmap)
 
                 val result = repository.geminiRepository.analyzeProductFrame(
-                    bitmap = bitmap,
+                    bitmap = activeBitmap,
                     detectedMarker = detectedMarker
                 )
                 val aiResult = result.getOrElse {
                     GeminiSustainabilityAnalyzer.createFallbackSustainabilityProfile(
-                        bitmap = bitmap,
+                        bitmap = activeBitmap,
                         detectedMarker = detectedMarker
                     )
                 }
@@ -416,8 +420,95 @@ class EcoViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     // Virtual Hub Actions
+    private var nextPlacementId = 1
+
     fun selectHubModel(model: VirtualHubModel) {
         _hubState.update { it.copy(selectedModel = model) }
+    }
+
+    fun addHubItemToStage(model: VirtualHubModel, startX: Float = 0f, startY: Float = 0f) {
+        val newId = nextPlacementId++
+        val newItem = PlacedHubItem(
+            id = newId,
+            model = model,
+            offsetX = startX,
+            offsetY = startY,
+            sizeDp = (model.realisticScale * 110f).coerceIn(80f, 150f)
+        )
+        _hubState.update { state ->
+            state.copy(
+                placedItems = state.placedItems + newItem,
+                selectedPlacedItemId = newId,
+                selectedModel = model,
+                toastFeedback = "+5 eco points · ${model.title} placed"
+            )
+        }
+        viewModelScope.launch {
+            val currentProfile = userProfile.value
+            val updatedProfile = currentProfile.copy(
+                totalCo2OffsetKg = currentProfile.totalCo2OffsetKg + 0.35,
+                totalPlasticSavedKg = currentProfile.totalPlasticSavedKg + 0.05
+            )
+            repository.updateUserProfile(updatedProfile)
+            delay(2400)
+            _hubState.update { if (it.toastFeedback?.contains(model.title) == true) it.copy(toastFeedback = null) else it }
+        }
+    }
+
+    fun updatePlacedItemOffset(id: Int, dx: Float, dy: Float) {
+        _hubState.update { state ->
+            val updated = state.placedItems.map { item ->
+                if (item.id == id) {
+                    item.copy(
+                        offsetX = item.offsetX + dx,
+                        offsetY = item.offsetY + dy
+                    )
+                } else item
+            }
+            state.copy(placedItems = updated)
+        }
+    }
+
+    fun selectPlacedItem(id: Int?) {
+        _hubState.update { state ->
+            val model = if (id != null) state.placedItems.find { it.id == id }?.model else state.selectedModel
+            state.copy(
+                selectedPlacedItemId = id,
+                selectedModel = model ?: state.selectedModel
+            )
+        }
+    }
+
+    fun resizePlacedItem(id: Int, deltaDp: Float) {
+        _hubState.update { state ->
+            val updated = state.placedItems.map { item ->
+                if (item.id == id) {
+                    item.copy(sizeDp = (item.sizeDp + deltaDp).coerceIn(60f, 240f))
+                } else item
+            }
+            state.copy(placedItems = updated)
+        }
+    }
+
+    fun removePlacedItem(id: Int) {
+        _hubState.update { state ->
+            val updated = state.placedItems.filter { it.id != id }
+            state.copy(
+                placedItems = updated,
+                selectedPlacedItemId = if (state.selectedPlacedItemId == id) null else state.selectedPlacedItemId,
+                toastFeedback = "Upgrade removed"
+            )
+        }
+        viewModelScope.launch {
+            delay(2000)
+            _hubState.update { if (it.toastFeedback == "Upgrade removed") it.copy(toastFeedback = null) else it }
+        }
+    }
+
+    fun clearAllPlacedItems() {
+        _hubState.update { state ->
+            state.copy(placedItems = emptyList(), selectedPlacedItemId = null)
+        }
     }
 
     fun toggleArPlacementMode(active: Boolean) {
@@ -434,6 +525,33 @@ class EcoViewModel(application: Application) : AndroidViewModel(application) {
 
     fun toggleSpecsDialog(show: Boolean) {
         _hubState.update { it.copy(showSpecsDialog = show) }
+    }
+
+    fun openModelSpecs(model: VirtualHubModel) {
+        _hubState.update { it.copy(specsModel = model, showSpecsDialog = true) }
+    }
+
+    fun dismissSpecsDialog() {
+        _hubState.update { it.copy(showSpecsDialog = false, specsModel = null) }
+    }
+
+    fun saveHubSnapshot() {
+        _hubState.update { state ->
+            state.copy(
+                snapshotCount = state.snapshotCount + 1,
+                toastFeedback = "📸 Space snapshot saved! +15 eco points"
+            )
+        }
+        viewModelScope.launch {
+            val currentProfile = userProfile.value
+            val updatedProfile = currentProfile.copy(
+                totalCo2OffsetKg = currentProfile.totalCo2OffsetKg + 0.75,
+                totalWaterSavedLiters = currentProfile.totalWaterSavedLiters + 10.0
+            )
+            repository.updateUserProfile(updatedProfile)
+            delay(3000)
+            _hubState.update { if (it.toastFeedback?.contains("snapshot") == true) it.copy(toastFeedback = null) else it }
+        }
     }
 
     fun saveCurrentModelPlacement() {
@@ -756,6 +874,82 @@ class EcoViewModel(application: Application) : AndroidViewModel(application) {
             delay(4000)
             _scannerState.update { it.copy(scanSuccessMessage = null) }
             _threeRState.update { it.copy(toastFeedback = null) }
+        }
+    }
+
+    private fun generateSampleWasteScanBitmap(): Bitmap {
+        val width = 640
+        val height = 640
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val canvas = android.graphics.Canvas(bitmap)
+        val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+
+        // Background
+        paint.color = android.graphics.Color.rgb(238, 243, 239)
+        canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), paint)
+
+        // Bottle body
+        paint.color = android.graphics.Color.rgb(38, 166, 154)
+        val bottleRect = android.graphics.RectF(240f, 180f, 400f, 520f)
+        canvas.drawRoundRect(bottleRect, 40f, 40f, paint)
+
+        // Bottle neck
+        val neckRect = android.graphics.RectF(285f, 110f, 355f, 190f)
+        canvas.drawRoundRect(neckRect, 10f, 10f, paint)
+
+        // Bottle cap
+        paint.color = android.graphics.Color.rgb(46, 125, 50)
+        val capRect = android.graphics.RectF(280f, 85f, 360f, 120f)
+        canvas.drawRoundRect(capRect, 8f, 8f, paint)
+
+        // Label on bottle
+        paint.color = android.graphics.Color.WHITE
+        val labelRect = android.graphics.RectF(245f, 290f, 395f, 410f)
+        canvas.drawRoundRect(labelRect, 12f, 12f, paint)
+
+        // Text on label
+        paint.color = android.graphics.Color.rgb(27, 94, 32)
+        paint.textSize = 28f
+        paint.isFakeBoldText = true
+        paint.textAlign = android.graphics.Paint.Align.CENTER
+        canvas.drawText("Eco Pure", 320f, 345f, paint)
+
+        paint.textSize = 18f
+        paint.color = android.graphics.Color.DKGRAY
+        canvas.drawText("100% Recyclable PET", 320f, 380f, paint)
+
+        return bitmap
+    }
+
+    fun clearAllScans() {
+        viewModelScope.launch {
+            repository.clearHistory()
+            _scannerState.update { it.copy(scanSuccessMessage = "🗑️ Scan history cleared successfully") }
+            delay(3000)
+            _scannerState.update { it.copy(scanSuccessMessage = null) }
+        }
+    }
+
+    fun updateUserName(name: String) {
+        viewModelScope.launch {
+            val current = userProfile.value
+            repository.updateUserProfile(current.copy(userName = name.trim()))
+        }
+    }
+
+    fun resetToDemoProfile() {
+        viewModelScope.launch {
+            repository.updateUserProfile(
+                UserEcoProfileEntity(
+                    id = 1,
+                    totalScansCount = 5,
+                    totalPlasticSavedKg = 1.85,
+                    totalWaterSavedLiters = 96.0,
+                    totalCo2OffsetKg = 7.4,
+                    userName = "Eco Hero",
+                    hasCompletedOnboarding = true
+                )
+            )
         }
     }
 }

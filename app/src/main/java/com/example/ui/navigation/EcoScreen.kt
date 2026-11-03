@@ -2,18 +2,24 @@ package com.example.ui.navigation
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CenterFocusStrong
+import androidx.compose.material.icons.filled.CropFree
+import androidx.compose.material.icons.filled.Eco
 import androidx.compose.material.icons.filled.EmojiObjects
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.NaturePeople
 import androidx.compose.material.icons.filled.Public
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ShoppingBag
 import androidx.compose.material.icons.outlined.CenterFocusStrong
+import androidx.compose.material.icons.outlined.CropFree
+import androidx.compose.material.icons.outlined.Eco
 import androidx.compose.material.icons.outlined.EmojiObjects
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.NaturePeople
 import androidx.compose.material.icons.outlined.Public
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.ShoppingBag
 import androidx.compose.ui.graphics.vector.ImageVector
 
@@ -43,16 +49,16 @@ sealed class EcoScreen(
     object Solutions : EcoScreen(
         route = "solutions",
         title = "Solutions",
-        selectedIcon = Icons.Filled.Public,
-        unselectedIcon = Icons.Outlined.Public,
+        selectedIcon = Icons.Filled.Eco,
+        unselectedIcon = Icons.Outlined.Eco,
         showInBottomBar = true
     )
 
     object Scanner : EcoScreen(
         route = "scanner",
-        title = "AR Scan",
-        selectedIcon = Icons.Filled.CenterFocusStrong,
-        unselectedIcon = Icons.Outlined.CenterFocusStrong,
+        title = "Scan",
+        selectedIcon = Icons.Filled.CropFree,
+        unselectedIcon = Icons.Outlined.CropFree,
         showInBottomBar = true
     )
 
@@ -61,7 +67,7 @@ sealed class EcoScreen(
         title = "Shop",
         selectedIcon = Icons.Filled.ShoppingBag,
         unselectedIcon = Icons.Outlined.ShoppingBag,
-        showInBottomBar = true
+        showInBottomBar = false
     )
 
     object TipsAndHabits : EcoScreen(
@@ -69,7 +75,15 @@ sealed class EcoScreen(
         title = "Eco Tips",
         selectedIcon = Icons.Filled.EmojiObjects,
         unselectedIcon = Icons.Outlined.EmojiObjects,
-        showInBottomBar = true
+        showInBottomBar = false
+    )
+
+    object Settings : EcoScreen(
+        route = "settings",
+        title = "Settings",
+        selectedIcon = Icons.Filled.Settings,
+        unselectedIcon = Icons.Outlined.Settings,
+        showInBottomBar = false
     )
 
     object AboutTeam : EcoScreen(
@@ -80,14 +94,20 @@ sealed class EcoScreen(
         showInBottomBar = false
     )
 
+    object VirtualHub : EcoScreen(
+        route = "virtual_hub",
+        title = "Virtual Hub",
+        selectedIcon = Icons.Filled.Home,
+        unselectedIcon = Icons.Outlined.Home,
+        showInBottomBar = false
+    )
+
     companion object {
-        // Scanner is placed strictly in the center (index 2 of 5 items)
+        // Exactly 3 bottom navigation items matching user request: Home, Scan, Solutions
         val bottomNavItems = listOf(
             Dashboard,
-            Solutions,
             Scanner,
-            Shop,
-            TipsAndHabits
+            Solutions
         )
     }
 }

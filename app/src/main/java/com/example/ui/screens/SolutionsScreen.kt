@@ -5,6 +5,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -53,6 +54,7 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -61,6 +63,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -146,7 +150,7 @@ fun SolutionsScreen(
                         )
                         Spacer(modifier = Modifier.height(3.dp))
                         Text(
-                            text = "Actionable climate roadmaps, circular swaps, and impact calculations",
+                            text = "Explore climate roadmaps, circular swaps, and impact calculations",
                             fontSize = 13.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             lineHeight = 18.sp
@@ -170,7 +174,7 @@ fun SolutionsScreen(
                         Text(
                             text = "Search solutions, plastics, water, food...",
                             fontSize = 13.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                            color = DarkText.copy(alpha = 0.65f)
                         )
                     },
                     leadingIcon = {
@@ -187,28 +191,29 @@ fun SolutionsScreen(
                                 Icon(
                                     imageVector = Icons.Filled.Close,
                                     contentDescription = "Clear search",
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    tint = DarkText.copy(alpha = 0.65f),
                                     modifier = Modifier.size(16.dp)
                                 )
                             }
                         }
                     },
                     singleLine = true,
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(16.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = EcoGreenPrimary,
-                        unfocusedBorderColor = EcoMintBorder,
-                        focusedContainerColor = MaterialTheme.colorScheme.surface,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                        unfocusedBorderColor = SoftPaleGreen.copy(alpha = 0.8f),
+                        focusedContainerColor = Color(0xF2FFFFFF),
+                        unfocusedContainerColor = Color(0xD9FFFFFF)
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
+                        .shadow(3.dp, RoundedCornerShape(16.dp), ambientColor = Color(0x140F261B))
                         .testTag("solutions_search_bar")
                 )
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                // Horizontal Filter Chips
+                // Horizontal Filter Chips with Frosted Glass Styling
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     contentPadding = PaddingValues(vertical = 4.dp)
@@ -219,13 +224,16 @@ fun SolutionsScreen(
                             onClick = { selectedCategoryFilter = null },
                             label = { Text("All Pillars (${solutions.size})", fontSize = 12.sp) },
                             colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = EcoGreenPrimary,
-                                selectedLabelColor = LightCreamGreen,
-                                containerColor = MaterialTheme.colorScheme.surface,
-                                labelColor = MaterialTheme.colorScheme.onSurface
+                                selectedContainerColor = Color(0xE6EDF7ED),
+                                selectedLabelColor = EcoGreenPrimaryDark,
+                                containerColor = Color(0xD9FFFFFF),
+                                labelColor = DarkText.copy(alpha = 0.8f)
                             ),
-                            border = BorderStroke(1.dp, if (selectedCategoryFilter == null) EcoGreenPrimary else EcoMintBorder),
-                            shape = RoundedCornerShape(10.dp)
+                            border = BorderStroke(
+                                1.dp,
+                                if (selectedCategoryFilter == null) EcoGreenPrimary else SoftPaleGreen.copy(alpha = 0.8f)
+                            ),
+                            shape = RoundedCornerShape(12.dp)
                         )
                     }
 
@@ -238,13 +246,16 @@ fun SolutionsScreen(
                             },
                             label = { Text("${sol.categoryIcon} ${sol.title.split(" ").first()}", fontSize = 12.sp) },
                             colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = EcoGreenPrimary,
-                                selectedLabelColor = LightCreamGreen,
-                                containerColor = MaterialTheme.colorScheme.surface,
-                                labelColor = MaterialTheme.colorScheme.onSurface
+                                selectedContainerColor = Color(0xE6EDF7ED),
+                                selectedLabelColor = EcoGreenPrimaryDark,
+                                containerColor = Color(0xD9FFFFFF),
+                                labelColor = DarkText.copy(alpha = 0.8f)
                             ),
-                            border = BorderStroke(1.dp, if (isSelected) EcoGreenPrimary else EcoMintBorder),
-                            shape = RoundedCornerShape(10.dp)
+                            border = BorderStroke(
+                                1.dp,
+                                if (isSelected) EcoGreenPrimary else SoftPaleGreen.copy(alpha = 0.8f)
+                            ),
+                            shape = RoundedCornerShape(12.dp)
                         )
                     }
                 }
@@ -340,9 +351,18 @@ private fun CleanSolutionCard(
         modifier = modifier
             .fillMaxWidth()
             .testTag("solution_card_${solution.id}"),
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, EcoMintBorder.copy(alpha = 0.85f))
+        shape = RoundedCornerShape(18.dp),
+        color = Color(0xF2FFFFFF),
+        border = BorderStroke(
+            1.dp,
+            Brush.verticalGradient(
+                listOf(
+                    Color.White.copy(alpha = 0.95f),
+                    SoftPaleGreen.copy(alpha = 0.5f)
+                )
+            )
+        ),
+        shadowElevation = 3.dp
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
             Row(
@@ -354,7 +374,8 @@ private fun CleanSolutionCard(
                     modifier = Modifier
                         .size(46.dp)
                         .clip(RoundedCornerShape(14.dp))
-                        .background(EcoMintContainer),
+                        .background(Color(0xE6EDF7ED))
+                        .border(1.dp, SoftPaleGreen.copy(alpha = 0.8f), RoundedCornerShape(14.dp)),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
@@ -370,26 +391,35 @@ private fun CleanSolutionCard(
                         text = solution.title,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = DarkText
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = solution.subtitle,
                         fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = DarkText.copy(alpha = 0.65f),
                         maxLines = 2,
                         lineHeight = 16.sp
                     )
                 }
 
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                    contentDescription = "View Solution Details",
-                    tint = EcoGreenPrimary,
-                    modifier = Modifier
-                        .padding(top = 4.dp)
-                        .size(18.dp)
-                )
+                Surface(
+                    shape = CircleShape,
+                    color = Color(0xFFEFF8F1),
+                    modifier = Modifier.padding(top = 2.dp)
+                ) {
+                    Box(
+                        modifier = Modifier.size(32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                            contentDescription = "View Solution",
+                            tint = EcoGreenPrimary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(10.dp))
@@ -402,8 +432,8 @@ private fun CleanSolutionCard(
             ) {
                 Surface(
                     shape = RoundedCornerShape(8.dp),
-                    color = EcoMintContainerLow,
-                    border = BorderStroke(1.dp, EcoMintBorder)
+                    color = Color(0xE6EDF7ED),
+                    border = BorderStroke(1.dp, SoftPaleGreen.copy(alpha = 0.8f))
                 ) {
                     Text(
                         text = "🛠️ ${solution.keyActionSteps.size} Action Steps",
@@ -416,8 +446,8 @@ private fun CleanSolutionCard(
 
                 Surface(
                     shape = RoundedCornerShape(8.dp),
-                    color = SoftPaleGreen.copy(alpha = 0.5f),
-                    border = BorderStroke(1.dp, EcoMintBorder)
+                    color = Color(0xD9FFFFFF),
+                    border = BorderStroke(1.dp, SoftPaleGreen.copy(alpha = 0.8f))
                 ) {
                     Text(
                         text = "🔄 ${solution.practicalAlternatives.size} Swaps",
@@ -458,8 +488,8 @@ private fun SolutionDetailDialog(
             .fillMaxWidth()
             .testTag("solution_detail_dialog"),
         properties = DialogProperties(usePlatformDefaultWidth = false),
-        shape = RoundedCornerShape(24.dp),
-        containerColor = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(26.dp),
+        containerColor = Color(0xF9FFFFFF),
         title = {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -840,17 +870,15 @@ private fun SolutionDetailDialog(
             }
         },
         confirmButton = {
-            Button(
+            TextButton(
                 onClick = onDismiss,
-                colors = ButtonDefaults.buttonColors(containerColor = EcoGreenPrimary),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.testTag("solution_done_button")
+                modifier = Modifier.testTag("solution_close_button")
             ) {
                 Text(
-                    text = "Commit to Action",
+                    text = "Close",
                     fontWeight = FontWeight.Bold,
-                    color = LightCreamGreen,
-                    fontSize = 13.sp
+                    color = EcoGreenPrimary,
+                    fontSize = 13.5.sp
                 )
             }
         }

@@ -126,11 +126,11 @@ fun WelcomeScreen(
                                 moveTo(0f, 0f)
                                 lineTo(size.width, 0f)
                                 lineTo(size.width, size.height - 40f)
-                                quadraticBezierTo(
+                                quadraticTo(
                                     size.width * 0.75f, size.height + 10f,
                                     size.width * 0.5f, size.height - 15f
                                 )
-                                quadraticBezierTo(
+                                quadraticTo(
                                     size.width * 0.25f, size.height - 45f,
                                     0f, size.height - 10f
                                 )

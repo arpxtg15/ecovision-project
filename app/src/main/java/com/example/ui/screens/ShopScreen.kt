@@ -5,6 +5,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -52,6 +53,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
@@ -61,6 +63,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.EcoProduct
 import com.example.data.model.EcoShopData
+import com.example.ui.theme.DarkText
 import com.example.ui.theme.EcoAmberWarm
 import com.example.ui.theme.EcoGreenPrimary
 import com.example.ui.theme.EcoGreenPrimaryDark
@@ -71,6 +74,7 @@ import com.example.ui.theme.EcoMintBorderDark
 import com.example.ui.theme.EcoMintContainer
 import com.example.ui.theme.EcoMintContainerLow
 import com.example.ui.theme.LightCreamGreen
+import com.example.ui.theme.SoftPaleGreen
 import com.example.ui.theme.EcoTealAccent
 import com.example.ui.theme.EcoTextPrimary
 import com.example.ui.theme.EcoTextSecondary
@@ -137,11 +141,20 @@ fun ShopScreen(
 
                     Spacer(modifier = Modifier.height(14.dp))
 
-                    // Balance Card
+                    // Balance Card with Frosted Glass Styling
                     Surface(
-                        shape = RoundedCornerShape(18.dp),
-                        color = EcoMintContainer,
-                        border = BorderStroke(1.dp, EcoMintBorder),
+                        shape = RoundedCornerShape(20.dp),
+                        color = Color(0xF2FFFFFF),
+                        border = BorderStroke(
+                            1.dp,
+                            Brush.verticalGradient(
+                                listOf(
+                                    Color.White.copy(alpha = 0.95f),
+                                    SoftPaleGreen.copy(alpha = 0.6f)
+                                )
+                            )
+                        ),
+                        shadowElevation = 4.dp,
                         modifier = Modifier
                             .fillMaxWidth()
                             .testTag("shop_eco_points_card")
@@ -179,7 +192,7 @@ fun ShopScreen(
                                 Text(
                                     text = "Earned by recycling & completing daily challenges",
                                     fontSize = 11.sp,
-                                    color = EcoTextSecondary
+                                    color = DarkText.copy(alpha = 0.65f)
                                 )
                             }
 
@@ -187,7 +200,8 @@ fun ShopScreen(
                                 modifier = Modifier
                                     .size(46.dp)
                                     .clip(CircleShape)
-                                    .background(EcoGreenPrimary.copy(alpha = 0.15f)),
+                                    .background(Color(0xE6EDF7ED))
+                                    .border(1.dp, SoftPaleGreen.copy(alpha = 0.8f), CircleShape),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(text = "🎁", fontSize = 22.sp)
@@ -197,13 +211,22 @@ fun ShopScreen(
                 }
             }
 
-            // 2. Feedback Snackbar/Banner
+            // 2. Feedback Snackbar/Banner with Frosted Glass Styling
             if (feedbackMessage != null) {
                 item {
                     Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = EcoMintContainerLow,
-                        border = BorderStroke(1.dp, EcoMintBorder),
+                        shape = RoundedCornerShape(14.dp),
+                        color = Color(0xF2FFFFFF),
+                        border = BorderStroke(
+                            1.dp,
+                            Brush.verticalGradient(
+                                listOf(
+                                    Color.White.copy(alpha = 0.95f),
+                                    EcoGreenPrimary.copy(alpha = 0.4f)
+                                )
+                            )
+                        ),
+                        shadowElevation = 3.dp,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 20.dp, vertical = 4.dp)
@@ -219,12 +242,12 @@ fun ShopScreen(
                 }
             }
 
-            // 3. Search Bar
+            // 3. Search Bar with Frosted Glass Styling
             item {
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = onSearchQueryChanged,
-                    placeholder = { Text("Search zero-waste products...", fontSize = 13.sp) },
+                    placeholder = { Text("Search zero-waste products...", fontSize = 13.sp, color = DarkText.copy(alpha = 0.65f)) },
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.Filled.Search,
@@ -239,27 +262,28 @@ fun ShopScreen(
                                 Icon(
                                     imageVector = Icons.Filled.Clear,
                                     contentDescription = "Clear",
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    tint = DarkText.copy(alpha = 0.65f)
                                 )
                             }
                         }
                     },
                     singleLine = true,
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(16.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = EcoGreenPrimary,
-                        unfocusedBorderColor = EcoMintBorder,
-                        focusedContainerColor = MaterialTheme.colorScheme.surface,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                        unfocusedBorderColor = SoftPaleGreen.copy(alpha = 0.8f),
+                        focusedContainerColor = Color(0xF2FFFFFF),
+                        unfocusedContainerColor = Color(0xD9FFFFFF)
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 20.dp, vertical = 6.dp)
+                        .shadow(3.dp, RoundedCornerShape(16.dp), ambientColor = Color(0x140F261B))
                         .testTag("shop_search_input")
                 )
             }
 
-            // 4. Category Pills Horizontal Scroll
+            // 4. Category Pills Horizontal Scroll with Frosted Glass Styling
             item {
                 val scrollState = rememberScrollState()
                 Row(
@@ -273,11 +297,12 @@ fun ShopScreen(
                         val isSelected = category == selectedCategory
                         Surface(
                             shape = RoundedCornerShape(20.dp),
-                            color = if (isSelected) EcoGreenPrimary else EcoMintContainer,
+                            color = if (isSelected) EcoGreenPrimary else Color(0xD9FFFFFF),
                             border = BorderStroke(
                                 1.dp,
-                                if (isSelected) EcoGreenPrimaryDark else EcoMintBorder
+                                if (isSelected) EcoGreenPrimaryDark else SoftPaleGreen.copy(alpha = 0.8f)
                             ),
+                            shadowElevation = if (isSelected) 3.dp else 1.dp,
                             modifier = Modifier
                                 .clickable { onCategorySelected(category) }
                                 .testTag("shop_category_$category")
@@ -286,7 +311,7 @@ fun ShopScreen(
                                 text = category,
                                 fontSize = 12.sp,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                color = if (isSelected) LightCreamGreen else EcoGreenPrimaryDark,
+                                color = if (isSelected) LightCreamGreen else DarkText,
                                 modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp)
                             )
                         }
@@ -362,9 +387,18 @@ private fun ProductCard(
         modifier = modifier
             .fillMaxWidth()
             .testTag("shop_product_card_${product.id}"),
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, EcoMintBorder.copy(alpha = 0.85f))
+        shape = RoundedCornerShape(18.dp),
+        color = Color(0xF2FFFFFF),
+        border = BorderStroke(
+            1.dp,
+            Brush.verticalGradient(
+                listOf(
+                    Color.White.copy(alpha = 0.95f),
+                    SoftPaleGreen.copy(alpha = 0.5f)
+                )
+            )
+        ),
+        shadowElevation = 3.dp
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
             Row(verticalAlignment = Alignment.Top) {
@@ -373,7 +407,8 @@ private fun ProductCard(
                     modifier = Modifier
                         .size(54.dp)
                         .clip(RoundedCornerShape(14.dp))
-                        .background(EcoMintContainer),
+                        .background(Color(0xE6EDF7ED))
+                        .border(1.dp, SoftPaleGreen.copy(alpha = 0.8f), RoundedCornerShape(14.dp)),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(text = product.iconEmoji, fontSize = 28.sp)
@@ -385,8 +420,8 @@ private fun ProductCard(
                     // Badge
                     Surface(
                         shape = RoundedCornerShape(6.dp),
-                        color = EcoMintContainerLow,
-                        border = BorderStroke(1.dp, EcoMintBorder),
+                        color = Color(0xE6EDF7ED),
+                        border = BorderStroke(1.dp, SoftPaleGreen.copy(alpha = 0.8f)),
                         modifier = Modifier.padding(bottom = 2.dp)
                     ) {
                         Text(
@@ -402,14 +437,14 @@ private fun ProductCard(
                         text = product.name,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface,
+                        color = DarkText,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
                         text = product.subtitle,
                         fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = DarkText.copy(alpha = 0.65f),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -430,7 +465,7 @@ private fun ProductCard(
                             text = "${product.rating} (${product.reviewsCount})",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = DarkText.copy(alpha = 0.65f)
                         )
                     }
                 }
@@ -441,7 +476,8 @@ private fun ProductCard(
             // Impact Statement Chip
             Surface(
                 shape = RoundedCornerShape(8.dp),
-                color = EcoMintContainerLow,
+                color = Color(0xD9FFFFFF),
+                border = BorderStroke(1.dp, SoftPaleGreen.copy(alpha = 0.6f)),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
@@ -552,8 +588,8 @@ private fun ProductDetailDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(20.dp),
-        containerColor = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(26.dp),
+        containerColor = Color(0xF9FFFFFF),
         modifier = Modifier.testTag("product_detail_dialog"),
         title = {
             Row(
@@ -743,8 +779,8 @@ private fun OrderSuccessDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(22.dp),
-        containerColor = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(26.dp),
+        containerColor = Color(0xF9FFFFFF),
         modifier = Modifier.testTag("order_success_dialog"),
         title = {
             Column(

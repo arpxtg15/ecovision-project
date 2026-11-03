@@ -2,11 +2,19 @@ package com.example.ui.screens
 
 import android.graphics.Bitmap
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,6 +25,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -28,11 +37,16 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.CropFree
 import androidx.compose.material.icons.filled.DeleteSweep
+import androidx.compose.material.icons.filled.Eco
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Loop
@@ -64,13 +78,21 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.R
 import com.example.ar.ArHitMarker
 import com.example.data.model.EcoActionType
 import com.example.data.model.WasteCategory
@@ -79,6 +101,7 @@ import com.example.data.remote.gemini.AiSustainabilityProfileResult
 import com.example.data.remote.gemini.DetectedObjectAnalysis
 import com.example.ui.components.ArOverlayView
 import com.example.ui.theme.AccentLime
+import com.example.ui.theme.DarkText
 import com.example.ui.theme.DeepForestGreen
 import com.example.ui.theme.EcoAmberWarm
 import com.example.ui.theme.EcoGreenPrimary
@@ -86,7 +109,14 @@ import com.example.ui.theme.EcoGreenPrimaryDark
 import com.example.ui.theme.EcoMintBorder
 import com.example.ui.theme.EcoMintContainer
 import com.example.ui.theme.EcoMintContainerLow
+import com.example.ui.theme.GlassBorderLimeGlow
+import com.example.ui.theme.GlassBorderMint
+import com.example.ui.theme.GlassBorderWhite
+import com.example.ui.theme.GlassBrushWhiteCard
+import com.example.ui.theme.GlassRimLight
+import com.example.ui.theme.GlassWhiteMedium
 import com.example.ui.theme.LightCreamGreen
+import com.example.ui.theme.PrimaryGreen
 import com.example.ui.theme.SoftPaleGreen
 import kotlin.math.roundToInt
 
@@ -109,9 +139,23 @@ fun WasteScannerScreen(
     onRetryScan: () -> Unit = {},
     onDismissError: () -> Unit = {},
     onDismissDialog: () -> Unit,
+    onNavigateBack: () -> Unit = {},
+    onOpenModelSelector: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var isArViewfinderExpanded by remember { mutableStateOf(false) }
+
+    // Animated laser beam vertical progress
+    val infiniteTransition = rememberInfiniteTransition(label = "scanner_laser_sweep")
+    val laserProgress by infiniteTransition.animateFloat(
+        initialValue = 0.12f,
+        targetValue = 0.88f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 2200, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "laser_sweep_pos"
+    )
 
     if (isArViewfinderExpanded) {
         // Fullscreen Immersive CameraX AR Scanning Mode
@@ -134,7 +178,7 @@ fun WasteScannerScreen(
         Column(
             modifier = modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
+                .background(Color(0xFFEDF7EE))
                 .testTag("waste_scanner_screen")
         ) {
             LazyColumn(
@@ -143,36 +187,310 @@ fun WasteScannerScreen(
                     .testTag("scanner_ar_tab_content"),
                 contentPadding = PaddingValues(bottom = 88.dp)
             ) {
-                // 1. Live AR Viewfinder Card
+                // 1. Organic Wavy Header Banner (Matches Mockup)
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(130.dp)
+                            .background(
+                                Brush.verticalGradient(
+                                    listOf(
+                                        Color(0xFF2C6D47),
+                                        Color(0xFF3E845A),
+                                        Color(0xFF67A480).copy(alpha = 0.6f),
+                                        Color.Transparent
+                                    )
+                                )
+                            )
+                            .padding(horizontal = 16.dp, vertical = 12.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 10.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // Circular Back Button
+                            Surface(
+                                shape = CircleShape,
+                                color = Color(0x38FFFFFF),
+                                modifier = Modifier
+                                    .size(42.dp)
+                                    .clip(CircleShape)
+                                    .clickable(onClick = onNavigateBack)
+                                    .testTag("scan_screen_back_button")
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                        contentDescription = "Back",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
+
+                            // Center EcoVision Branding & Subtitle
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Spa,
+                                        contentDescription = null,
+                                        tint = Color(0xFFD6F5E0),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(3.dp))
+                                    Icon(
+                                        imageVector = Icons.Filled.Eco,
+                                        contentDescription = null,
+                                        tint = Color.White,
+                                        modifier = Modifier.size(26.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = "EcoVision",
+                                        fontSize = 24.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White,
+                                        letterSpacing = (-0.3).sp
+                                    )
+                                }
+                                Text(
+                                    text = "Get the Best Out of Nature",
+                                    fontSize = 11.5.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = Color(0xFFE2F5E6)
+                                )
+                            }
+
+                            // Right Sprout / Model Button
+                            Surface(
+                                shape = CircleShape,
+                                color = Color(0x38FFFFFF),
+                                modifier = Modifier
+                                    .size(42.dp)
+                                    .clip(CircleShape)
+                                    .clickable(onClick = onOpenModelSelector)
+                                    .testTag("scan_screen_sprout_button")
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Spa,
+                                        contentDescription = "Teachable Machine Models & Settings",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // 2. AR Scanner Title & "Small scans. Big impact." Badge (Matches Mockup)
+                item {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 18.dp, end = 18.dp, top = 4.dp, bottom = 10.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "AR Scanner",
+                                fontSize = 28.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF0F3B2C)
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Scan everyday objects and discover how to dispose, recycle, reuse or reduce them — for a greener tomorrow.",
+                                fontSize = 12.5.sp,
+                                color = Color(0xFF38604F),
+                                lineHeight = 17.sp
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(12.dp))
+
+                        // Stylized badge: Small scans. Big impact.
+                        Column(
+                            horizontalAlignment = Alignment.End,
+                            modifier = Modifier.padding(top = 4.dp)
+                        ) {
+                            Text(
+                                text = "Small scans.\nBig impact.",
+                                fontSize = 13.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF2E8057),
+                                lineHeight = 16.sp,
+                                textAlign = TextAlign.End
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            // Hand-drawn smiling curved arc underline
+                            Canvas(modifier = Modifier.width(76.dp).height(12.dp)) {
+                                val path = Path().apply {
+                                    moveTo(2f, 2f)
+                                    quadraticTo(size.width * 0.5f, size.height + 3f, size.width - 2f, 3f)
+                                }
+                                drawPath(
+                                    path = path,
+                                    color = Color(0xFF2E8057),
+                                    style = Stroke(width = 2.5.dp.toPx(), cap = StrokeCap.Round)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // 3. Camera Viewfinder Card with Corner Reticle & Scanning Laser (Matches Mockup)
                 item {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                            .padding(horizontal = 16.dp, vertical = 4.dp)
                     ) {
-                        Box(
+                        Surface(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(290.dp)
+                                .height(330.dp)
+                                .clickable { onTriggerScan(null, null) }
+                                .testTag("camera_viewfinder_card"),
+                            shape = RoundedCornerShape(26.dp),
+                            color = Color(0xFF0E2217),
+                            shadowElevation = 6.dp
                         ) {
-                            ArOverlayView(
-                                isAnalyzing = isAnalyzing,
-                                selectedItem = selectedItem,
-                                onTriggerScan = onTriggerScan,
-                                isExpandedMode = false,
-                                onToggleExpand = { isArViewfinderExpanded = true }
+                            Box(modifier = Modifier.fillMaxSize()) {
+                                // Background Photo of Clear Plastic Bottle on Wooden Table
+                                Image(
+                                    painter = painterResource(id = R.drawable.img_scanner_bottle_sample_1791178013150),
+                                    contentDescription = "Camera viewfinder preview",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+
+                                // Live AR Camera Overlay
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(Color.Transparent)
+                                ) {
+                                    ArOverlayView(
+                                        isAnalyzing = isAnalyzing,
+                                        selectedItem = selectedItem,
+                                        onTriggerScan = onTriggerScan,
+                                        isExpandedMode = false,
+                                        onToggleExpand = { isArViewfinderExpanded = true }
+                                    )
+                                }
+
+                                // Top-Left "Tap to scan" Pill Badge
+                                Row(
+                                    modifier = Modifier
+                                        .align(Alignment.TopStart)
+                                        .padding(14.dp)
+                                        .clip(RoundedCornerShape(20.dp))
+                                        .background(Color(0x8C000000))
+                                        .border(0.8.dp, Color.White.copy(alpha = 0.25f), RoundedCornerShape(20.dp))
+                                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Bolt,
+                                        contentDescription = null,
+                                        tint = Color.White,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = "Tap to scan",
+                                        color = Color.White,
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+
+                                // Centered Neon Mint Corner Brackets & Laser Beam Sweep
+                                ArScannerReticle(
+                                    laserProgress = laserProgress,
+                                    modifier = Modifier.align(Alignment.Center)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // 4. "Point your camera" Instruction Card (Matches Mockup)
+                item {
+                    Surface(
+                        shape = RoundedCornerShape(22.dp),
+                        color = Color(0xFFE8F6EB),
+                        border = BorderStroke(1.dp, Color(0xFFD4EED8)),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                            .clickable { onTriggerScan(null, null) }
+                            .testTag("point_camera_helper_card")
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // Circular icon container with viewfinder
+                            Box(
+                                modifier = Modifier
+                                    .size(46.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(0xFFDCF2E1)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.CropFree,
+                                    contentDescription = null,
+                                    tint = Color(0xFF2E8857),
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.width(14.dp))
+
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Point your camera",
+                                    fontSize = 14.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF0F3B2C)
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "at any object you want to scan.",
+                                    fontSize = 12.sp,
+                                    color = Color(0xFF456B5A)
+                                )
+                            }
+
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                contentDescription = "Scan",
+                                tint = Color(0xFF1B6B44),
+                                modifier = Modifier.size(24.dp)
                             )
                         }
                     }
                 }
 
-                // 2. Loading State Card during Gemini Vision processing
+                // 2. Loading State Card during Gemini Vision processing (Frosted Glass Banner)
                 if (isAnalyzing) {
                     item {
                         Surface(
-                            shape = RoundedCornerShape(16.dp),
-                            color = DeepForestGreen.copy(alpha = 0.95f),
-                            border = BorderStroke(1.dp, AccentLime.copy(alpha = 0.7f)),
+                            shape = RoundedCornerShape(18.dp),
+                            color = Color(0xDC0D2818),
+                            border = BorderStroke(1.2.dp, Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.8f), AccentLime))),
+                            shadowElevation = 6.dp,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 16.dp, vertical = 6.dp)
@@ -208,13 +526,14 @@ fun WasteScannerScreen(
                     }
                 }
 
-                // 3. Error State Card with Retry Option
+                // 3. Error State Card with Retry Option (Frosted Glass Alert)
                 if (scanErrorMessage != null && !isAnalyzing) {
                     item {
                         Surface(
-                            shape = RoundedCornerShape(16.dp),
-                            color = Color(0xFFFFEBEE),
-                            border = BorderStroke(1.dp, Color(0xFFEF5350)),
+                            shape = RoundedCornerShape(18.dp),
+                            color = Color(0xF5FFF5F5),
+                            border = BorderStroke(1.2.dp, Brush.verticalGradient(listOf(Color.White, Color(0xFFEF5350).copy(alpha = 0.7f)))),
+                            shadowElevation = 4.dp,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 16.dp, vertical = 6.dp)
@@ -381,7 +700,7 @@ fun WasteScannerScreen(
                     }
                 }
 
-                // 5. Search & Category Filters
+                // 5. Search & Category Filters with Frosted Glass Styling
                 item {
                     Column(
                         modifier = Modifier
@@ -393,26 +712,27 @@ fun WasteScannerScreen(
                             onValueChange = onSearchChanged,
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .shadow(3.dp, RoundedCornerShape(16.dp), ambientColor = Color(0x100F261B), spotColor = Color(0x180F261B))
                                 .testTag("scanner_search_input"),
                             placeholder = { Text("Search waste item (plastic, glass, paper...)") },
                             leadingIcon = {
                                 Icon(
                                     imageVector = Icons.Filled.Search,
                                     contentDescription = "Search",
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    tint = PrimaryGreen
                                 )
                             },
-                            shape = RoundedCornerShape(14.dp),
+                            shape = RoundedCornerShape(16.dp),
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = EcoGreenPrimary,
-                                unfocusedBorderColor = EcoMintBorder,
-                                focusedContainerColor = MaterialTheme.colorScheme.surface,
-                                unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                                focusedBorderColor = PrimaryGreen,
+                                unfocusedBorderColor = SoftPaleGreen.copy(alpha = 0.8f),
+                                focusedContainerColor = Color(0xF7FFFFFF),
+                                unfocusedContainerColor = Color(0xEBFFFFFF)
                             ),
                             singleLine = true
                         )
 
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(10.dp))
 
                         LazyRow(
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -421,19 +741,19 @@ fun WasteScannerScreen(
                                 FilterChip(
                                     selected = activeFilter == null,
                                     onClick = { onFilterSelected(null) },
-                                    label = { Text("All (${items.size})", fontSize = 12.sp) },
-                                    shape = RoundedCornerShape(12.dp),
+                                    label = { Text("All (${items.size})", fontSize = 12.sp, fontWeight = if (activeFilter == null) FontWeight.Bold else FontWeight.Medium) },
+                                    shape = RoundedCornerShape(14.dp),
                                     border = FilterChipDefaults.filterChipBorder(
                                         enabled = true,
                                         selected = activeFilter == null,
-                                        borderColor = EcoMintBorder,
-                                        selectedBorderColor = EcoGreenPrimary
+                                        borderColor = SoftPaleGreen.copy(alpha = 0.7f),
+                                        selectedBorderColor = PrimaryGreen
                                     ),
                                     colors = FilterChipDefaults.filterChipColors(
-                                        selectedContainerColor = EcoMintContainer,
-                                        selectedLabelColor = EcoGreenPrimaryDark,
-                                        containerColor = MaterialTheme.colorScheme.surface,
-                                        labelColor = MaterialTheme.colorScheme.onSurface
+                                        selectedContainerColor = Color(0xE0D6EED6),
+                                        selectedLabelColor = DeepForestGreen,
+                                        containerColor = Color(0xD9FFFFFF),
+                                        labelColor = DarkText.copy(alpha = 0.8f)
                                     )
                                 )
                             }
@@ -441,19 +761,19 @@ fun WasteScannerScreen(
                                 FilterChip(
                                     selected = activeFilter == category,
                                     onClick = { onFilterSelected(if (activeFilter == category) null else category) },
-                                    label = { Text(category.displayName, fontSize = 12.sp) },
-                                    shape = RoundedCornerShape(12.dp),
+                                    label = { Text(category.displayName, fontSize = 12.sp, fontWeight = if (activeFilter == category) FontWeight.Bold else FontWeight.Medium) },
+                                    shape = RoundedCornerShape(14.dp),
                                     border = FilterChipDefaults.filterChipBorder(
                                         enabled = true,
                                         selected = activeFilter == category,
-                                        borderColor = EcoMintBorder,
-                                        selectedBorderColor = EcoGreenPrimary
+                                        borderColor = SoftPaleGreen.copy(alpha = 0.7f),
+                                        selectedBorderColor = PrimaryGreen
                                     ),
                                     colors = FilterChipDefaults.filterChipColors(
-                                        selectedContainerColor = EcoMintContainer,
-                                        selectedLabelColor = EcoGreenPrimaryDark,
-                                        containerColor = MaterialTheme.colorScheme.surface,
-                                        labelColor = MaterialTheme.colorScheme.onSurface
+                                        selectedContainerColor = Color(0xE0D6EED6),
+                                        selectedLabelColor = DeepForestGreen,
+                                        containerColor = Color(0xD9FFFFFF),
+                                        labelColor = DarkText.copy(alpha = 0.8f)
                                     )
                                 )
                             }
@@ -1116,10 +1436,14 @@ private fun DetectedObjectResultCard(
         modifier = modifier
             .fillMaxWidth()
             .testTag("detected_object_card_${detected.name.lowercase().replace(" ", "_")}"),
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.2.dp, if (isUncertain) EcoAmberWarm else actionColor.copy(alpha = 0.6f)),
-        shadowElevation = 2.dp
+        shape = RoundedCornerShape(18.dp),
+        color = Color(0xF2FFFFFF),
+        border = BorderStroke(
+            1.2.dp,
+            if (isUncertain) Brush.verticalGradient(listOf(Color.White, EcoAmberWarm))
+            else Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.95f), actionColor.copy(alpha = 0.7f)))
+        ),
+        shadowElevation = 4.dp
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
             // Top Row: Name, Confidence, and Recommended Action Badge
@@ -1322,14 +1646,25 @@ private fun CleanWasteItemCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val actionColor = Color(item.primaryAction.badgeColorHex)
+
     Surface(
         onClick = onClick,
         modifier = modifier
             .fillMaxWidth()
             .testTag("waste_item_card_${item.id}"),
-        shape = RoundedCornerShape(14.dp),
-        color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, EcoMintBorder.copy(alpha = 0.8f))
+        shape = RoundedCornerShape(16.dp),
+        color = Color(0xF2FFFFFF),
+        border = BorderStroke(
+            1.dp,
+            Brush.verticalGradient(
+                listOf(
+                    Color.White.copy(alpha = 0.95f),
+                    SoftPaleGreen.copy(alpha = 0.45f)
+                )
+            )
+        ),
+        shadowElevation = 3.dp
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
@@ -1337,9 +1672,10 @@ private fun CleanWasteItemCard(
         ) {
             Box(
                 modifier = Modifier
-                    .size(38.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(Color(item.primaryAction.badgeColorHex).copy(alpha = 0.12f)),
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(actionColor.copy(alpha = 0.14f))
+                    .border(1.dp, actionColor.copy(alpha = 0.35f), RoundedCornerShape(12.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -1353,7 +1689,7 @@ private fun CleanWasteItemCard(
                         else -> Icons.Filled.DeleteSweep
                     },
                     contentDescription = null,
-                    tint = Color(item.primaryAction.badgeColorHex),
+                    tint = actionColor,
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -1365,25 +1701,27 @@ private fun CleanWasteItemCard(
                     text = item.name,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = DarkText
                 )
+                Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = "${item.category.displayName} • ${item.decompositionTime}",
                     fontSize = 11.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = DarkText.copy(alpha = 0.65f)
                 )
             }
 
             Surface(
-                shape = RoundedCornerShape(8.dp),
-                color = Color(item.primaryAction.badgeColorHex).copy(alpha = 0.15f)
+                shape = RoundedCornerShape(10.dp),
+                color = actionColor.copy(alpha = 0.14f),
+                border = BorderStroke(1.dp, actionColor.copy(alpha = 0.35f))
             ) {
                 Text(
                     text = item.primaryAction.title,
-                    color = Color(item.primaryAction.badgeColorHex),
+                    color = actionColor,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                 )
             }
         }
@@ -1412,4 +1750,95 @@ private fun getActionIcon(action: EcoActionType) = when (action) {
     EcoActionType.COMPOST -> Icons.Filled.Spa
     EcoActionType.DISPOSE -> Icons.Filled.DeleteSweep
     else -> Icons.Filled.AutoAwesome
+}
+
+@Composable
+private fun ArScannerReticle(
+    laserProgress: Float,
+    modifier: Modifier = Modifier
+) {
+    val reticleWidth = 180.dp
+    val reticleHeight = 210.dp
+
+    Box(
+        modifier = modifier
+            .size(width = reticleWidth, height = reticleHeight)
+    ) {
+        // 4 Rounded L-shaped Corner Brackets matching mockup
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val strokeWidth = 3.8.dp.toPx()
+            val bracketLength = 34.dp.toPx()
+            val cornerRadius = 16.dp.toPx()
+            val bracketColor = Color(0xFF7CE8A0)
+
+            // Top-Left Corner Bracket
+            drawPath(
+                path = Path().apply {
+                    moveTo(0f, bracketLength)
+                    lineTo(0f, cornerRadius)
+                    quadraticTo(0f, 0f, cornerRadius, 0f)
+                    lineTo(bracketLength, 0f)
+                },
+                color = bracketColor,
+                style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+            )
+
+            // Top-Right Corner Bracket
+            drawPath(
+                path = Path().apply {
+                    moveTo(size.width - bracketLength, 0f)
+                    lineTo(size.width - cornerRadius, 0f)
+                    quadraticTo(size.width, 0f, size.width, cornerRadius)
+                    lineTo(size.width, bracketLength)
+                },
+                color = bracketColor,
+                style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+            )
+
+            // Bottom-Left Corner Bracket
+            drawPath(
+                path = Path().apply {
+                    moveTo(0f, size.height - bracketLength)
+                    lineTo(0f, size.height - cornerRadius)
+                    quadraticTo(0f, size.height, cornerRadius, size.height)
+                    lineTo(bracketLength, size.height)
+                },
+                color = bracketColor,
+                style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+            )
+
+            // Bottom-Right Corner Bracket
+            drawPath(
+                path = Path().apply {
+                    moveTo(size.width - bracketLength, size.height)
+                    lineTo(size.width - cornerRadius, size.height)
+                    quadraticTo(size.width, size.height, size.width, size.height - cornerRadius)
+                    lineTo(size.width, size.height - bracketLength)
+                },
+                color = bracketColor,
+                style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+            )
+        }
+
+        // Animated Horizontal Laser Scanning Line sweeping up and down
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(3.5.dp)
+                .offset(y = reticleHeight * laserProgress)
+                .background(
+                    Brush.horizontalGradient(
+                        colors = listOf(
+                            Color.Transparent,
+                            Color(0x557CE8A0),
+                            Color(0xFF7CE8A0),
+                            Color.White,
+                            Color(0xFF7CE8A0),
+                            Color(0x557CE8A0),
+                            Color.Transparent
+                        )
+                    )
+                )
+        )
+    }
 }

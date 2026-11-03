@@ -118,6 +118,7 @@ private const val TAG = "ArCameraPreviewSurface"
 fun ArCameraPreviewSurface(
     isScanningActive: Boolean,
     onObjectTargeted: ((ArHitMarker?, Bitmap?) -> Unit)? = null,
+    onFrameCaptureProvider: (((() -> Bitmap?) -> Unit))? = null,
     isExpandedMode: Boolean = false,
     onToggleExpand: (() -> Unit)? = null,
     modifier: Modifier = Modifier
@@ -262,15 +263,17 @@ fun ArCameraPreviewSurface(
                 factory = { ctx ->
                     val previewView = PreviewView(ctx).apply {
                         scaleType = PreviewView.ScaleType.FILL_CENTER
-                        implementationMode = PreviewView.ImplementationMode.PERFORMANCE
+                        implementationMode = PreviewView.ImplementationMode.COMPATIBLE
                     }
                     currentPreviewView = previewView
+                    onFrameCaptureProvider?.invoke { previewView.bitmap }
                     val cameraProviderFuture = ProcessCameraProvider.getInstance(ctx)
                     cameraProviderFuture.addListener({
                         try {
                             val provider = cameraProviderFuture.get()
                             cameraProviderInstance = provider
                             bindCamera(provider, previewView)
+                            onFrameCaptureProvider?.invoke { previewView.bitmap }
                         } catch (exc: Exception) {
                             Log.e(TAG, "Failed to get ProcessCameraProvider: ${exc.message}", exc)
                         }
@@ -354,57 +357,40 @@ fun ArCameraPreviewSurface(
                 val canvasWidth = size.width
                 val canvasHeight = size.height
 
-                val boxWidth = canvasWidth * 0.72f * reticlePulse
-                val boxHeight = canvasHeight * 0.60f * reticlePulse
+                val boxWidth = canvasWidth * 0.74f * reticlePulse
+                val boxHeight = canvasHeight * 0.62f * reticlePulse
                 val left = (canvasWidth - boxWidth) / 2f
                 val top = (canvasHeight - boxHeight) / 2f
-                val cornerLength = 34f
+                val cornerLength = 26.dp.toPx()
 
-                // Draw AR Scanning Frame Corners
-                val strokeColor = if (isScanningActive) AccentLime else SoftPaleGreen
-                val cornerStroke = Stroke(width = 2.5.dp.toPx())
+                // Draw AR Clean Viewfinder Frame Corners
+                val strokeColor = if (isScanningActive) AccentLime else SoftPaleGreen.copy(alpha = 0.85f)
+                val cornerStrokeWidth = 2.dp.toPx()
 
                 // Top-Left Corner
-                drawLine(strokeColor, Offset(left, top), Offset(left + cornerLength, top), strokeWidth = cornerStroke.width)
-                drawLine(strokeColor, Offset(left, top), Offset(left, top + cornerLength), strokeWidth = cornerStroke.width)
+                drawLine(strokeColor, Offset(left, top), Offset(left + cornerLength, top), strokeWidth = cornerStrokeWidth)
+                drawLine(strokeColor, Offset(left, top), Offset(left, top + cornerLength), strokeWidth = cornerStrokeWidth)
 
                 // Top-Right Corner
-                drawLine(strokeColor, Offset(left + boxWidth, top), Offset(left + boxWidth - cornerLength, top), strokeWidth = cornerStroke.width)
-                drawLine(strokeColor, Offset(left + boxWidth, top), Offset(left + boxWidth, top + cornerLength), strokeWidth = cornerStroke.width)
+                drawLine(strokeColor, Offset(left + boxWidth, top), Offset(left + boxWidth - cornerLength, top), strokeWidth = cornerStrokeWidth)
+                drawLine(strokeColor, Offset(left + boxWidth, top), Offset(left + boxWidth, top + cornerLength), strokeWidth = cornerStrokeWidth)
 
                 // Bottom-Left Corner
-                drawLine(strokeColor, Offset(left, top + boxHeight), Offset(left + cornerLength, top + boxHeight), strokeWidth = cornerStroke.width)
-                drawLine(strokeColor, Offset(left, top + boxHeight), Offset(left, top + boxHeight - cornerLength), strokeWidth = cornerStroke.width)
+                drawLine(strokeColor, Offset(left, top + boxHeight), Offset(left + cornerLength, top + boxHeight), strokeWidth = cornerStrokeWidth)
+                drawLine(strokeColor, Offset(left, top + boxHeight), Offset(left, top + boxHeight - cornerLength), strokeWidth = cornerStrokeWidth)
 
                 // Bottom-Right Corner
-                drawLine(strokeColor, Offset(left + boxWidth, top + boxHeight), Offset(left + boxWidth - cornerLength, top + boxHeight), strokeWidth = cornerStroke.width)
-                drawLine(strokeColor, Offset(left + boxWidth, top + boxHeight), Offset(left + boxWidth, top + boxHeight - cornerLength), strokeWidth = cornerStroke.width)
+                drawLine(strokeColor, Offset(left + boxWidth, top + boxHeight), Offset(left + boxWidth - cornerLength, top + boxHeight), strokeWidth = cornerStrokeWidth)
+                drawLine(strokeColor, Offset(left + boxWidth, top + boxHeight), Offset(left + boxWidth, top + boxHeight - cornerLength), strokeWidth = cornerStrokeWidth)
 
-                // Center Aiming Crosshairs
-                val centerX = canvasWidth / 2f
-                val centerY = canvasHeight / 2f
-                val crosshairSize = 18f
-                drawLine(
-                    color = AccentLime.copy(alpha = 0.85f),
-                    start = Offset(centerX - crosshairSize, centerY),
-                    end = Offset(centerX + crosshairSize, centerY),
-                    strokeWidth = 1.8.dp.toPx()
-                )
-                drawLine(
-                    color = AccentLime.copy(alpha = 0.85f),
-                    start = Offset(centerX, centerY - crosshairSize),
-                    end = Offset(centerX, centerY + crosshairSize),
-                    strokeWidth = 1.8.dp.toPx()
-                )
-
-                // Animated AR Laser Scanning Line
+                // Animated AR Laser Scanning Line (visible only when scanning active)
                 if (isScanningActive) {
                     val laserY = top + (boxHeight * scanLineOffset)
                     drawRect(
                         brush = Brush.verticalGradient(
                             colors = listOf(
                                 Color.Transparent,
-                                AccentLime.copy(alpha = 0.4f),
+                                AccentLime.copy(alpha = 0.35f),
                                 AccentLime,
                                 Color.Transparent
                             ),
@@ -437,84 +423,63 @@ fun ArCameraPreviewSurface(
                 )
             }
 
-            // 6. Top Telemetry & Optical Controls Header
+            // 6. Top Status & Glass Camera Controls
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 10.dp, vertical = 8.dp),
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Precision Lock Status Chip & Gemini Vision Badge
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                // Frosted Glass Live Status Pill
+                Surface(
+                    shape = RoundedCornerShape(20.dp),
+                    color = Color(0xCC0D2818),
+                    border = BorderStroke(1.dp, Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.5f), SoftPaleGreen.copy(alpha = 0.2f)))),
+                    shadowElevation = 4.dp
                 ) {
-                    Surface(
-                        shape = RoundedCornerShape(20.dp),
-                        color = DeepForestGreen.copy(alpha = 0.92f),
-                        border = BorderStroke(1.dp, SoftPaleGreen.copy(alpha = 0.5f))
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(7.dp)
-                                    .clip(CircleShape)
-                                    .background(if (isCameraBound) AccentLime else EcoAmberWarm)
-                            )
-                            Spacer(modifier = Modifier.width(5.dp))
-                            Text(
-                                text = if (arAvailability == ArCoreHelper.ArAvailability.SUPPORTED_INSTALLED) "AR (99%)" else "AR Vision",
-                                color = LightCreamGreen,
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        }
-                    }
-
-                    // Gemini Multimodal Vision AI Badge
-                    Surface(
-                        shape = RoundedCornerShape(20.dp),
-                        color = DeepForestGreen.copy(alpha = 0.92f),
-                        border = BorderStroke(1.dp, AccentLime.copy(alpha = 0.6f))
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.AutoAwesome,
-                                contentDescription = "Gemini Vision",
-                                tint = AccentLime,
-                                modifier = Modifier.size(12.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = "Gemini Multimodal Vision",
-                                color = LightCreamGreen,
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
+                        Box(
+                            modifier = Modifier
+                                .size(7.dp)
+                                .clip(CircleShape)
+                                .background(if (isCameraBound) AccentLime else EcoAmberWarm)
+                                .border(1.dp, Color.White.copy(alpha = 0.6f), CircleShape)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = if (isScanningActive) "Analyzing..." else "AI Vision Glass",
+                            color = LightCreamGreen,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            letterSpacing = 0.3.sp
+                        )
                     }
                 }
 
-                // Camera Action Controls: Torch, Lens Flip, Zoom, Fullscreen Expand
+                // Frosted Glass Quick Action Buttons: Torch, Lens Flip, Zoom, Fullscreen Expand
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     // Flashlight / Torch Toggle
                     if (isBackCamera) {
                         Surface(
                             shape = CircleShape,
-                            color = if (isTorchEnabled) AccentLime else DeepForestGreen.copy(alpha = 0.92f),
-                            border = BorderStroke(1.dp, if (isTorchEnabled) AccentLime else SoftPaleGreen.copy(alpha = 0.5f)),
+                            color = if (isTorchEnabled) AccentLime else Color(0xCC0D2818),
+                            border = if (isTorchEnabled) BorderStroke(1.dp, AccentLime)
+                            else BorderStroke(
+                                1.dp,
+                                Brush.verticalGradient(
+                                    listOf(Color.White.copy(alpha = 0.6f), SoftPaleGreen.copy(alpha = 0.2f))
+                                )
+                            ),
+                            shadowElevation = 3.dp,
                             modifier = Modifier
-                                .size(32.dp)
+                                .size(34.dp)
                                 .clickable {
                                     isTorchEnabled = !isTorchEnabled
                                     currentCamera?.cameraControl?.enableTorch(isTorchEnabled)
@@ -526,7 +491,7 @@ fun ArCameraPreviewSurface(
                                     imageVector = if (isTorchEnabled) Icons.Filled.FlashOn else Icons.Filled.FlashOff,
                                     contentDescription = "Torch",
                                     tint = if (isTorchEnabled) DeepForestGreen else LightCreamGreen,
-                                    modifier = Modifier.size(15.dp)
+                                    modifier = Modifier.size(16.dp)
                                 )
                             }
                         }
@@ -535,10 +500,16 @@ fun ArCameraPreviewSurface(
                     // Flip Camera Lens (Back / Front)
                     Surface(
                         shape = CircleShape,
-                        color = DeepForestGreen.copy(alpha = 0.92f),
-                        border = BorderStroke(1.dp, SoftPaleGreen.copy(alpha = 0.5f)),
+                        color = Color(0xCC0D2818),
+                        border = BorderStroke(
+                            1.dp,
+                            Brush.verticalGradient(
+                                listOf(Color.White.copy(alpha = 0.6f), SoftPaleGreen.copy(alpha = 0.2f))
+                            )
+                        ),
+                        shadowElevation = 3.dp,
                         modifier = Modifier
-                            .size(32.dp)
+                            .size(34.dp)
                             .clickable {
                                 isBackCamera = !isBackCamera
                                 isTorchEnabled = false
@@ -550,7 +521,7 @@ fun ArCameraPreviewSurface(
                                 imageVector = Icons.Filled.Cameraswitch,
                                 contentDescription = "Switch Camera",
                                 tint = LightCreamGreen,
-                                modifier = Modifier.size(15.dp)
+                                modifier = Modifier.size(16.dp)
                             )
                         }
                     }
@@ -558,8 +529,14 @@ fun ArCameraPreviewSurface(
                     // Macro Zoom Toggle (1.0x -> 2.0x -> 3.0x)
                     Surface(
                         shape = RoundedCornerShape(12.dp),
-                        color = DeepForestGreen.copy(alpha = 0.92f),
-                        border = BorderStroke(1.dp, AccentLime.copy(alpha = 0.6f)),
+                        color = Color(0xCC0D2818),
+                        border = BorderStroke(
+                            1.dp,
+                            Brush.verticalGradient(
+                                listOf(Color.White.copy(alpha = 0.6f), SoftPaleGreen.copy(alpha = 0.2f))
+                            )
+                        ),
+                        shadowElevation = 3.dp,
                         modifier = Modifier
                             .clickable {
                                 currentZoomRatio = when (currentZoomRatio) {
@@ -572,21 +549,14 @@ fun ArCameraPreviewSurface(
                             }
                             .testTag("camera_zoom_toggle")
                     ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                        Box(
+                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Icon(
-                                imageVector = Icons.Filled.ZoomIn,
-                                contentDescription = "Zoom",
-                                tint = AccentLime,
-                                modifier = Modifier.size(13.dp)
-                            )
-                            Spacer(modifier = Modifier.width(3.dp))
                             Text(
                                 text = "${currentZoomRatio.toInt()}x",
                                 color = LightCreamGreen,
-                                fontSize = 10.sp,
+                                fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold
                             )
                         }
@@ -596,10 +566,16 @@ fun ArCameraPreviewSurface(
                     if (onToggleExpand != null) {
                         Surface(
                             shape = CircleShape,
-                            color = DeepForestGreen.copy(alpha = 0.92f),
-                            border = BorderStroke(1.dp, SoftPaleGreen.copy(alpha = 0.5f)),
+                            color = Color(0xCC0D2818),
+                            border = BorderStroke(
+                                1.dp,
+                                Brush.verticalGradient(
+                                    listOf(Color.White.copy(alpha = 0.6f), SoftPaleGreen.copy(alpha = 0.2f))
+                                )
+                            ),
+                            shadowElevation = 3.dp,
                             modifier = Modifier
-                                .size(32.dp)
+                                .size(34.dp)
                                 .clickable { onToggleExpand() }
                                 .testTag("camera_expand_toggle")
                         ) {
@@ -608,50 +584,13 @@ fun ArCameraPreviewSurface(
                                     imageVector = if (isExpandedMode) Icons.Filled.FullscreenExit else Icons.Filled.Fullscreen,
                                     contentDescription = "Expand Viewfinder",
                                     tint = LightCreamGreen,
-                                    modifier = Modifier.size(16.dp)
+                                    modifier = Modifier.size(17.dp)
                                 )
                             }
                         }
                     }
                 }
             }
-
-            // 7. Bottom Physical Plane Telemetry Bar
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .padding(horizontal = 10.dp, vertical = 8.dp)
-            ) {
-                Surface(
-                    shape = RoundedCornerShape(10.dp),
-                    color = DeepForestGreen.copy(alpha = 0.94f),
-                    border = BorderStroke(1.dp, SoftPaleGreen.copy(alpha = 0.35f)),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 10.dp, vertical = 4.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "📐 Tap object to focus & target with Gemini Vision",
-                            color = LightCreamGreen,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                        Text(
-                            text = "${(arState.currentFocalDistanceMeters * 100).roundToInt()}cm plane",
-                            color = AccentLime,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-            }
-
         } else {
             // Permission Required Prompt View
             Column(

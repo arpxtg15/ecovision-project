@@ -235,4 +235,8 @@ class EcoRepository(
     suspend fun clearHistory() {
         scanDao.clearAll()
     }
+
+    suspend fun updateUserProfile(profile: UserEcoProfileEntity) {
+        habitDao.saveUserProfile(profile)
+    }
 }

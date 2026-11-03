@@ -23,7 +23,7 @@ data class GeminiPart(
 
 @JsonClass(generateAdapter = true)
 data class GeminiInlineData(
-    @Json(name = "mime_type") val mimeType: String = "image/jpeg",
+    @field:Json(name = "mime_type") val mimeType: String = "image/jpeg",
     val data: String
 )
 
